@@ -12,7 +12,20 @@
           "package_name": "com.example.permas_hub_system"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "997155377311-iluf1v8cu6o0qu05sqsn17162ftf3atb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.permas_hub_system",
+            "certificate_hash": "e96d2406d78ff12bc1448664d917fded4844f927"
+          }
+        },
+        {
+          "client_id": "997155377311-cv70ff0eougmc9kt3452sb4bm856nk5a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDpIQuOeekVb0VOfqaC6031BozgGbMjNxA"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "997155377311-cv70ff0eougmc9kt3452sb4bm856nk5a.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "997155377311-naqaitj68n3521f4ub2o4cinghgbkblj.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.permasHubSystem"
+              }
+            }
+          ]
         }
       }
     }
