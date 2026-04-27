@@ -70,141 +70,238 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const pageBackground = Color(0xFFEFF3F8);
-    const panelBackground = Color(0xFFF5F8FB);
-    const primaryBlue = Color(0xFF003E7E);
-    const borderColor = Color(0xFFD7DEE8);
-    const inputBg = Color(0xFFF0F3F6);
+    const primary = Color(0xFF003E7E);
+    const title = Color(0xFF002F63);
+    const bg = Color(0xFFEFF3F8);
+    const panel = Color(0xFFF7FAFD);
+    const label = Color(0xFF5E6C80);
+    const border = Color(0xFFD7DFE8);
+    const fieldBg = Color(0xFFF1F4F8);
 
     return Scaffold(
-      backgroundColor: pageBackground,
-      appBar: AppBar(
-        title: const Text('Create Account'),
-        backgroundColor: Colors.transparent,
-      ),
+      backgroundColor: bg,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(14),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 360),
+              constraints: const BoxConstraints(maxWidth: 340),
               child: Container(
                 decoration: BoxDecoration(
-                  color: panelBackground,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFD8E0EA)),
+                  color: panel,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFD7E0EB)),
                 ),
-                padding: const EdgeInsets.fromLTRB(14, 18, 14, 18),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const Text(
-                        'Register to PERMAS Hub',
-                        style: TextStyle(
-                          color: Color(0xFF012D5E),
-                          fontWeight: FontWeight.w800,
-                          fontSize: 20,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      const Text(
-                        'Use your email and password to create a new account.',
-                        style: TextStyle(
-                          color: Color(0xFF5B6778),
-                          fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: _inputDecoration(
-                          hint: 'name@domain.com',
-                          background: inputBg,
-                          border: borderColor,
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your email.';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: true,
-                        decoration: _inputDecoration(
-                          hint: 'Password',
-                          background: inputBg,
-                          border: borderColor,
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your password.';
-                          }
-                          if (value.length < 6) {
-                            return 'Password must be at least 6 characters.';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _confirmController,
-                        obscureText: true,
-                        decoration: _inputDecoration(
-                          hint: 'Confirm password',
-                          background: inputBg,
-                          border: borderColor,
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please confirm your password.';
-                          }
-                          if (value != _passwordController.text) {
-                            return 'Passwords do not match.';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 18),
-                      SizedBox(
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _register,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryBlue,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            textStyle: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
+                child: Stack(
+                  children: [
+                    Positioned(
+                      right: 0,
+                      top: 90,
+                      child: Opacity(
+                        opacity: 0.14,
+                        child: Container(
+                          width: 84,
+                          height: 190,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.white,
+                                Colors.grey.shade300,
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
                             ),
                           ),
-                          child: _isLoading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text('CREATE ACCOUNT'),
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Back to login'),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 18, 14, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          SizedBox(
+                            height: 50,
+                            child: Image.asset(
+                              'assets/permas_logo.png',
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(
+                                  Icons.token_outlined,
+                                  size: 24,
+                                  color: primary,
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'PERMAS',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: primary,
+                              fontSize: 33 / 2,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Create Account.',
+                            style: TextStyle(
+                              color: title,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              height: 1.1,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Register with your email and password to join the hub.',
+                            style: TextStyle(
+                              color: label,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Container(
+                            padding: const EdgeInsets.fromLTRB(14, 16, 14, 14),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              image: const DecorationImage(
+                                image: AssetImage('assets/mountkinabalu.jpg'),
+                                fit: BoxFit.cover,
+                                opacity: 0.12,
+                              ),
+                            ),
+                            child: Form(
+                              key: _formKey,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  const _FieldLabel('EMAIL ADDRESS'),
+                                  const SizedBox(height: 8),
+                                  TextFormField(
+                                    controller: _emailController,
+                                    keyboardType: TextInputType.emailAddress,
+                                    decoration: _inputDecoration(
+                                      hint: 'name@domain.com',
+                                      border: border,
+                                      background: fieldBg,
+                                    ),
+                                    validator: (value) {
+                                      if (value == null || value.trim().isEmpty) {
+                                        return 'Please enter your email.';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 14),
+                                  const _FieldLabel('PASSWORD'),
+                                  const SizedBox(height: 8),
+                                  TextFormField(
+                                    controller: _passwordController,
+                                    obscureText: true,
+                                    decoration: _inputDecoration(
+                                      hint: '••••••••',
+                                      border: border,
+                                      background: fieldBg,
+                                    ),
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Please enter your password.';
+                                      }
+                                      if (value.length < 6) {
+                                        return 'Password must be at least 6 characters.';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 14),
+                                  const _FieldLabel('CONFIRM PASSWORD'),
+                                  const SizedBox(height: 8),
+                                  TextFormField(
+                                    controller: _confirmController,
+                                    obscureText: true,
+                                    decoration: _inputDecoration(
+                                      hint: '••••••••',
+                                      border: border,
+                                      background: fieldBg,
+                                    ),
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Please confirm your password.';
+                                      }
+                                      if (value != _passwordController.text) {
+                                        return 'Passwords do not match.';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 18),
+                                  SizedBox(
+                                    height: 48,
+                                    child: ElevatedButton(
+                                      onPressed: _isLoading ? null : _register,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: primary,
+                                        foregroundColor: Colors.white,
+                                        elevation: 3,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        disabledBackgroundColor: const Color(0xFF7A93B5),
+                                      ),
+                                      child: _isLoading
+                                          ? const SizedBox(
+                                              width: 20,
+                                              height: 20,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Colors.white,
+                                              ),
+                                            )
+                                          : const Text('CREATE ACCOUNT  ➜'),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  SizedBox(
+                                    height: 44,
+                                    child: OutlinedButton(
+                                      onPressed: _isLoading ? null : _backToLogin,
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: primary,
+                                        side: const BorderSide(color: Color(0xFFD7E0EB)),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                      ),
+                                      child: const Text('BACK TO LOGIN'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          const Center(
+                            child: Text(
+                              'ENCRYPTED CONNECTION © 2026 PERMAS. All rights reserved.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Color(0xFF9AA8BA),
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1.5,
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -214,6 +311,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  void _backToLogin() {
+    Navigator.of(context).pop();
+  }
+
   InputDecoration _inputDecoration({
     required String hint,
     required Color background,
@@ -221,25 +322,44 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }) {
     return InputDecoration(
       isDense: true,
-      hintText: hint,
-      hintStyle: const TextStyle(
-        color: Color(0xFFADB7C5),
-        fontSize: 15,
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       filled: true,
       fillColor: background,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: border),
+      hintText: hint,
+      hintStyle: const TextStyle(
+        color: Color(0xFFA9B4C2),
+        fontSize: 14,
       ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
         borderSide: BorderSide(color: border),
       ),
-      focusedBorder: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(10)),
-        borderSide: BorderSide(color: Color(0xFF7A93B5), width: 1.2),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Color(0xFF7A93B5), width: 1.2),
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: border),
+      ),
+    );
+  }
+}
+
+class _FieldLabel extends StatelessWidget {
+  const _FieldLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(
+        color: Color(0xFF5E6C80),
+        fontSize: 10,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 1.1,
       ),
     );
   }
