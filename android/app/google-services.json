@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "997155377311-ar50ug6k50q5puh0vkaskd8c3pdf5vqh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.permas_hub_system",
+            "certificate_hash": "8e5286c87b84d1848ae9ef8e83768f28b9910bb0"
+          }
+        },
+        {
           "client_id": "997155377311-iluf1v8cu6o0qu05sqsn17162ftf3atb.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

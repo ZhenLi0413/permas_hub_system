@@ -165,14 +165,23 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const Icon(
-                            Icons.token_outlined,
-                            size: 24,
-                            color: primary,
+                          SizedBox(
+                            height: 50,
+                            child: Image.asset(
+                              'assets/permas_logo.png',
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(
+                                  Icons.token_outlined,
+                                  size: 24,
+                                  color: primary,
+                                );
+                              },
+                            ),
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'PERMAS Hub',
+                            'PERMAS',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: primary,
@@ -205,6 +214,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(12),
+                              image: const DecorationImage(
+                                image: AssetImage('assets/mountkinabalu.jpg'),
+                                fit: BoxFit.cover,
+                                opacity: 0.12,
+                              ),
                             ),
                             child: Form(
                               key: _formKey,
@@ -421,7 +435,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 20),
                           const Text(
-                            'ENCRYPTED CONNECTION © 2024 PERMAS HUB\nSYSTEMS',
+                            'ENCRYPTED CONNECTION © 2026 PERMAS. All rights reserved.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: Color(0xFF9AA8BA),
@@ -499,34 +513,39 @@ class _StatusPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          'System Status',
-          style: TextStyle(
-            color: Color(0xFF5E6C80),
-            fontSize: 12,
-          ),
-        ),
-        SizedBox(height: 2),
-        Row(
+    return const SizedBox(
+      height: 36,
+      child: Center(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Icon(Icons.circle, size: 8, color: Color(0xFF0A5AA5)),
-            SizedBox(width: 6),
             Text(
-              'Operational',
+              'System Status',
               style: TextStyle(
-                color: Color(0xFF003E7E),
+                color: Color(0xFF5E6C80),
                 fontSize: 12,
-                fontWeight: FontWeight.w700,
               ),
+            ),
+            SizedBox(height: 2),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.circle, size: 8, color: Color(0xFF0A5AA5)),
+                SizedBox(width: 6),
+                Text(
+                  'Operational',
+                  style: TextStyle(
+                    color: Color(0xFF003E7E),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
-      ],
+      ),
     );
   }
 }
