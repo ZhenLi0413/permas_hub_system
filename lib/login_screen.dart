@@ -2,8 +2,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-
+import 'forgot_password_screen.dart';
 import 'register_screen.dart';
+import 'services/user_profile_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,9 +17,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  late final UserProfileService _profileService = UserProfileService();
 
-  final List<String> _roles = const ['Public User', 'Admin', 'Staff'];
-  String _selectedRole = 'Public User';
   bool _isEmailLoading = false;
   bool _isGoogleLoading = false;
 
@@ -33,30 +33,74 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
+
     setState(() => _isEmailLoading = true);
 
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
-    } on FirebaseAuthException catch (error) {
-      String message = 'Login failed. Please try again.';
-      if (error.code == 'invalid-email') {
-        message = 'Invalid email format.';
-      } else if (error.code == 'user-not-found' ||
-          error.code == 'wrong-password' ||
-          error.code == 'invalid-credential') {
-        message = 'Wrong email or password.';
+      final credential = await _signInOrCreateAdmin(email, password);
+      final user = credential.user;
+
+      if (user != null &&
+          UserProfileService.isAdminEmail(email)) {
+        await _profileService.ensureAdminProfile(user);
       }
 
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      _showVerificationNotice(user);
+    } on FirebaseAuthException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_friendlyAuthMessage(error))));
     } finally {
       if (mounted) {
         setState(() => _isEmailLoading = false);
+      }
+    }
+  }
+
+  Future<UserCredential> _signInOrCreateAdmin(
+    String email,
+    String password,
+  ) async {
+    try {
+      return await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+    } on FirebaseAuthException catch (error) {
+      final isAdminLogin =
+          UserProfileService.isAdminEmail(email) &&
+          password == UserProfileService.adminPassword;
+      final canAutoCreateAdmin =
+          error.code == 'user-not-found' ||
+          error.code == 'invalid-credential' ||
+          error.code == 'wrong-password';
+
+      if (!isAdminLogin || !canAutoCreateAdmin) {
+        rethrow;
+      }
+
+      try {
+        return await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: UserProfileService.adminEmail,
+          password: UserProfileService.adminPassword,
+        );
+      } on FirebaseAuthException catch (createError) {
+        if (createError.code == 'email-already-in-use') {
+          throw FirebaseAuthException(
+            code: 'wrong-password',
+            message: 'The admin account exists but the password is incorrect.',
+          );
+        }
+        rethrow;
       }
     }
   }
@@ -79,13 +123,23 @@ class _LoginScreenState extends State<LoginScreen> {
         idToken: googleAuth.idToken,
       );
 
-      await FirebaseAuth.instance.signInWithCredential(credential);
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(
+        credential,
+      );
+      final user = userCredential.user;
+      if (user != null) {
+        await _profileService.ensureGoogleProfile(user);
+      }
     } on FirebaseAuthException catch (error) {
       if (!mounted) {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Google sign-in failed: ${error.message ?? error.code}')),
+        SnackBar(
+          content: Text(
+            'Google sign-in failed: ${error.message ?? error.code}',
+          ),
+        ),
       );
     } catch (error, stackTrace) {
       debugPrint('Google sign-in error: $error');
@@ -93,9 +147,9 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Google sign-in failed: $error')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Google sign-in failed: $error')));
     } finally {
       if (mounted) {
         setState(() => _isGoogleLoading = false);
@@ -103,11 +157,44 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _openRegister() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => const RegisterScreen(),
+  void _showVerificationNotice(User? user) {
+    if (user == null ||
+        user.emailVerified ||
+        UserProfileService.isAdminEmail(user.email)) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Email is not verified yet. You can verify it later.'),
       ),
+    );
+  }
+
+  String _friendlyAuthMessage(FirebaseAuthException error) {
+    if (error.code == 'invalid-email') {
+      return 'Invalid email format.';
+    }
+    if (error.code == 'user-not-found' ||
+        error.code == 'wrong-password' ||
+        error.code == 'invalid-credential') {
+      return 'Wrong email or password.';
+    }
+    if (error.code == 'email-already-in-use') {
+      return 'This email is already in use.';
+    }
+    return error.message ?? 'Login failed. Please try again.';
+  }
+
+  void _openRegister() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const RegisterScreen()));
+  }
+
+  void _openForgotPassword() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const ForgotPasswordScreen()),
     );
   }
 
@@ -121,7 +208,7 @@ class _LoginScreenState extends State<LoginScreen> {
     const border = Color(0xFFD7DFE8);
     const fieldBg = Color(0xFFF1F4F8);
 
-    final bool isAnyLoading = _isEmailLoading || _isGoogleLoading;
+    final isAnyLoading = _isEmailLoading || _isGoogleLoading;
 
     return Scaffold(
       backgroundColor: bg,
@@ -149,10 +236,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           height: 190,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [
-                                Colors.white,
-                                Colors.grey.shade300,
-                              ],
+                              colors: [Colors.white, Colors.grey.shade300],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
@@ -185,7 +269,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: primary,
-                              fontSize: 33 / 2,
+                              fontSize: 16.5,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 0.2,
                             ),
@@ -203,10 +287,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 6),
                           const Text(
                             'Enter your credentials to continue to the hub.',
-                            style: TextStyle(
-                              color: label,
-                              fontSize: 13,
-                            ),
+                            style: TextStyle(color: label, fontSize: 13),
                           ),
                           const SizedBox(height: 20),
                           Container(
@@ -225,35 +306,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  const _FieldLabel('ACCOUNT ROLE'),
-                                  const SizedBox(height: 8),
-                                  DropdownButtonFormField<String>(
-                                    initialValue: _selectedRole,
-                                    icon: const Icon(
-                                      Icons.keyboard_arrow_down_rounded,
-                                      color: Color(0xFF596A80),
-                                    ),
-                                    decoration: _inputDecoration(
-                                      hint: '',
-                                      border: border,
-                                      background: fieldBg,
-                                    ),
-                                    items: _roles
-                                        .map(
-                                          (role) => DropdownMenuItem<String>(
-                                            value: role,
-                                            child: Text(role),
-                                          ),
-                                        )
-                                        .toList(),
-                                    onChanged: (value) {
-                                      if (value == null) {
-                                        return;
-                                      }
-                                      setState(() => _selectedRole = value);
-                                    },
-                                  ),
-                                  const SizedBox(height: 14),
                                   const _FieldLabel('EMAIL ADDRESS'),
                                   const SizedBox(height: 8),
                                   TextFormField(
@@ -265,23 +317,40 @@ class _LoginScreenState extends State<LoginScreen> {
                                       background: fieldBg,
                                     ),
                                     validator: (value) {
-                                      if (value == null || value.trim().isEmpty) {
+                                      if (value == null ||
+                                          value.trim().isEmpty) {
                                         return 'Please enter your email.';
+                                      }
+                                      if (!value.contains('@')) {
+                                        return 'Please enter a valid email.';
                                       }
                                       return null;
                                     },
                                   ),
                                   const SizedBox(height: 14),
-                                  const Row(
+                                  Row(
                                     children: [
-                                      Expanded(child: _FieldLabel('PASSWORD')),
-                                      Text(
-                                        'FORGOT?',
-                                        style: TextStyle(
-                                          color: primary,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w700,
-                                          letterSpacing: 0.6,
+                                      const Expanded(
+                                        child: _FieldLabel('PASSWORD'),
+                                      ),
+                                      InkWell(
+                                        onTap: isAnyLoading
+                                            ? null
+                                            : _openForgotPassword,
+                                        child: const Padding(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 4,
+                                            vertical: 2,
+                                          ),
+                                          child: Text(
+                                            'FORGOT?',
+                                            style: TextStyle(
+                                              color: primary,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w700,
+                                              letterSpacing: 0.6,
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -291,7 +360,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     controller: _passwordController,
                                     obscureText: true,
                                     decoration: _inputDecoration(
-                                      hint: '••••••••',
+                                      hint: 'password',
                                       border: border,
                                       background: fieldBg,
                                     ),
@@ -315,7 +384,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                         foregroundColor: Colors.white,
                                         elevation: 3,
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                         ),
                                         textStyle: const TextStyle(
                                           fontWeight: FontWeight.w800,
@@ -332,18 +403,25 @@ class _LoginScreenState extends State<LoginScreen> {
                                                 color: Colors.white,
                                               ),
                                             )
-                                          : const Text('LOGIN  ➜'),
+                                          : const Text('LOGIN'),
                                     ),
                                   ),
                                   const SizedBox(height: 10),
                                   SizedBox(
                                     height: 44,
                                     child: OutlinedButton(
-                                      onPressed: isAnyLoading ? null : _openRegister,
+                                      onPressed: isAnyLoading
+                                          ? null
+                                          : _openRegister,
                                       style: OutlinedButton.styleFrom(
-                                        side: const BorderSide(color: primary, width: 1.2),
+                                        side: const BorderSide(
+                                          color: primary,
+                                          width: 1.2,
+                                        ),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                         ),
                                         foregroundColor: primary,
                                         textStyle: const TextStyle(
@@ -359,21 +437,34 @@ class _LoginScreenState extends State<LoginScreen> {
                                   SizedBox(
                                     height: 44,
                                     child: OutlinedButton.icon(
-                                      onPressed: isAnyLoading ? null : _signInWithGoogle,
+                                      onPressed: isAnyLoading
+                                          ? null
+                                          : _signInWithGoogle,
                                       style: OutlinedButton.styleFrom(
-                                        side: const BorderSide(color: Color(0xFFD0D8E4)),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
+                                        side: const BorderSide(
+                                          color: Color(0xFFD0D8E4),
                                         ),
-                                        foregroundColor: const Color(0xFF22354D),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        foregroundColor: const Color(
+                                          0xFF22354D,
+                                        ),
                                       ),
                                       icon: _isGoogleLoading
                                           ? const SizedBox(
                                               width: 16,
                                               height: 16,
-                                              child: CircularProgressIndicator(strokeWidth: 2),
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
                                             )
-                                          : const Icon(Icons.g_mobiledata, size: 24),
+                                          : const Icon(
+                                              Icons.g_mobiledata,
+                                              size: 24,
+                                            ),
                                       label: const Text(
                                         'Continue with Google',
                                         style: TextStyle(
@@ -394,7 +485,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       const Text(
@@ -421,7 +513,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 Container(
                                   width: 1,
-                                  margin: const EdgeInsets.symmetric(horizontal: 10),
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                  ),
                                   color: const Color(0xFFD7DFE8),
                                 ),
                                 const Expanded(
@@ -468,10 +562,7 @@ class _LoginScreenState extends State<LoginScreen> {
       filled: true,
       fillColor: background,
       hintText: hint,
-      hintStyle: const TextStyle(
-        color: Color(0xFFA9B4C2),
-        fontSize: 14,
-      ),
+      hintStyle: const TextStyle(color: Color(0xFFA9B4C2), fontSize: 14),
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
@@ -522,10 +613,7 @@ class _StatusPanel extends StatelessWidget {
           children: [
             Text(
               'System Status',
-              style: TextStyle(
-                color: Color(0xFF5E6C80),
-                fontSize: 12,
-              ),
+              style: TextStyle(color: Color(0xFF5E6C80), fontSize: 12),
             ),
             SizedBox(height: 2),
             Row(
@@ -549,3 +637,5 @@ class _StatusPanel extends StatelessWidget {
     );
   }
 }
+
+

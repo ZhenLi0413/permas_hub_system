@@ -1,0 +1,419 @@
+<!-- Announcements Feed (Blue) -->
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-container": "#ffffff",
+                    "tertiary": "#3a3c3c",
+                    "tertiary-container": "#747475",
+                    "background": "#f7f9fb",
+                    "primary-container": "#baeaff",
+                    "secondary-fixed": "#c8c6c6",
+                    "surface-container": "#eceef0",
+                    "primary": "#003366",
+                    "secondary": "#4a5d72",
+                    "outline": "#7d8b9a",
+                    "on-surface": "#001e40",
+                    "on-error-container": "#410002",
+                    "error": "#ba1a1a",
+                    "outline-variant": "#d0d8e1",
+                    "on-primary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "tertiary-fixed-dim": "#464747",
+                    "surface-variant": "#d0d8e1",
+                    "on-primary-fixed": "#ffffff",
+                    "on-background": "#001e40",
+                    "secondary-fixed-dim": "#acabab",
+                    "surface-container-high": "#e1e5e9",
+                    "error-container": "#ffdad6",
+                    "surface-container-highest": "#d7dde4",
+                    "on-secondary-fixed": "#1b1c1c",
+                    "inverse-surface": "#2f3131",
+                    "primary-fixed-dim": "#474747",
+                    "surface-tint": "#003366",
+                    "on-tertiary-fixed": "#ffffff",
+                    "surface-container-low": "#f1f3f5",
+                    "inverse-primary": "#c6c6c6",
+                    "inverse-on-surface": "#f1f1f1",
+                    "on-tertiary": "#e3e2e2",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary-fixed-variant": "#e3e2e2",
+                    "primary-fixed": "#003366",
+                    "on-primary-fixed-variant": "#e2e2e2",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface-variant": "#4a5d72",
+                    "surface-dim": "#dadada",
+                    "surface": "#f7f9fb",
+                    "on-primary-container": "#001e40",
+                    "on-secondary-container": "#1b1c1c",
+                    "tertiary-fixed": "#5e5e5f",
+                    "on-secondary-fixed-variant": "#3b3b3b",
+                    "secondary-container": "#d0d8e1",
+                    "surface-bright": "#f7f9fb"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.5rem",
+                    "lg": "0.75rem",
+                    "xl": "1rem",
+                    "full": "1.5rem"
+            },
+            "fontFamily": {
+                    "headline": ["Plus Jakarta Sans"],
+                    "body": ["Plus Jakarta Sans"],
+                    "label": ["Plus Jakarta Sans"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #f7f9fb;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen pb-32">
+<header class="fixed top-0 w-full z-50 bg-[#f7f9fb]/80 dark:bg-slate-900/80 backdrop-blur-xl">
+<div class="flex justify-between items-center px-6 h-16 w-full max-w-7xl mx-auto">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#001e40] dark:text-[#baeaff]" style="">school</span>
+<h1 class="text-xl font-bold text-[#001e40] dark:text-[#baeaff] font-headline tracking-tight" style="">PERMAS Hub</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-[#001e40] dark:text-[#baeaff] hover:bg-[#eceef0]/50 dark:hover:bg-slate-800/50 transition-colors rounded-full active:scale-95 duration-100" style="">
+<span class="material-symbols-outlined" style="">search</span>
+</button>
+<div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="">account_circle</span>
+</div>
+</div>
+</div>
+</header>
+<main class="pt-24 px-6 max-w-4xl mx-auto">
+<section class="mb-12">
+<h2 class="text-6xl font-bold font-headline tracking-tighter mb-3 text-primary" style="">Announcements</h2>
+<p class="text-secondary font-body text-lg max-w-md leading-relaxed" style="">The latest updates, official news, and essential briefings from the organization.</p>
+</section>
+<section class="flex flex-col gap-6">
+<article class="bg-surface-container-lowest p-6 rounded-xl hover:bg-[#eceef0]/50 transition-colors active:scale-[0.98] duration-150 group border border-outline-variant/30">
+<div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
+<div class="flex-1">
+<div class="flex items-center gap-3 mb-4">
+<span class="bg-[#003366] text-white px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest font-label" style="">General</span>
+<span class="text-outline text-xs font-semibold font-label" style="">OCT 24, 2023</span>
+</div>
+<h3 class="text-2xl font-extrabold font-headline leading-tight mb-2 text-on-background group-hover:text-primary transition-colors underline-offset-4" style="">Strategic Realignment for Q4 Operations</h3>
+<p class="text-secondary font-body leading-relaxed max-w-2xl" style="">Following our recent board review, we are implementing a series of structural adjustments aimed at enhancing cross-departmental efficiency and response times.</p>
+</div>
+<div class="hidden md:block">
+<span class="material-symbols-outlined text-outline-variant text-4xl" style="">arrow_outward</span>
+</div>
+</div>
+</article>
+<article class="bg-primary-container/30 p-6 rounded-xl hover:bg-primary-container/40 transition-colors active:scale-[0.98] duration-150 group border-l-4 border-primary">
+<div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
+<div class="flex-1">
+<div class="flex items-center gap-3 mb-4">
+<span class="bg-primary text-on-primary px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest font-label" style="">Urgent</span>
+<span class="text-primary/70 text-xs font-bold font-label" style="">OCT 22, 2023</span>
+</div>
+<h3 class="text-2xl font-extrabold font-headline leading-tight mb-2 text-on-background" style="">System Maintenance: Infrastructure Upgrade</h3>
+<p class="text-secondary font-body leading-relaxed max-w-2xl" style="">Please be advised that the Hub portal will undergo scheduled maintenance this Sunday from 02:00 to 06:00 UTC. During this window, some services may be intermittent.</p>
+</div>
+<div class="hidden md:block">
+<span class="material-symbols-outlined text-primary/40 text-4xl" style="">warning</span>
+</div>
+</div>
+</article>
+<article class="bg-surface-container-lowest p-6 rounded-xl hover:bg-[#eceef0]/50 transition-colors active:scale-[0.98] duration-150 group border border-outline-variant/30">
+<div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
+<div class="flex-1">
+<div class="flex items-center gap-3 mb-4">
+<span class="bg-surface-container-highest text-primary px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest font-label" style="">Member Spotlight</span>
+<span class="text-outline text-xs font-semibold font-label" style="">OCT 19, 2023</span>
+</div>
+<h3 class="text-2xl font-extrabold font-headline leading-tight mb-2 text-on-background group-hover:text-primary transition-colors" style="">Recognizing Exceptional Community Leadership</h3>
+<p class="text-secondary font-body leading-relaxed max-w-2xl" style="">This month we highlight the volunteer efforts in the local tech education initiative, which saw over 200 participants from our hub community.</p>
+</div>
+<div class="hidden md:block">
+<span class="material-symbols-outlined text-outline-variant text-4xl" style="">verified</span>
+</div>
+</div>
+</article>
+<article class="bg-surface-container-lowest p-6 rounded-xl hover:bg-[#eceef0]/50 transition-colors active:scale-[0.98] duration-150 group border border-outline-variant/30">
+<div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
+<div class="flex-1">
+<div class="flex items-center gap-3 mb-4">
+<span class="bg-surface-container-highest text-primary px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest font-label" style="">Policy</span>
+<span class="text-outline text-xs font-semibold font-label" style="">OCT 15, 2023</span>
+</div>
+<h3 class="text-2xl font-extrabold font-headline leading-tight mb-2 text-on-background group-hover:text-primary transition-colors" style="">Updated Privacy Framework Implementation</h3>
+<p class="text-secondary font-body leading-relaxed max-w-2xl" style="">In accordance with new international data standards, our privacy policy has been revised to provide more transparency regarding member information storage.</p>
+</div>
+<div class="hidden md:block">
+<span class="material-symbols-outlined text-outline-variant text-4xl" style="">shield_person</span>
+</div>
+</div>
+</article>
+<article class="bg-surface-container-low p-6 rounded-xl hover:bg-surface-container-high transition-colors active:scale-[0.98] duration-150 group opacity-60">
+<div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
+<div class="flex-1">
+<div class="flex items-center gap-3 mb-4">
+<span class="bg-surface-container-highest text-primary/60 px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest font-label" style="">Archived</span>
+<span class="text-outline/70 text-xs font-semibold font-label" style="">OCT 08, 2023</span>
+</div>
+<h3 class="text-xl font-bold font-headline leading-tight mb-2 text-on-background" style="">Annual Conference Recap: The Path Forward</h3>
+<p class="text-secondary/80 font-body leading-relaxed max-w-2xl text-sm" style="">Key takeaways from the session on digital sovereignty and collective organizational growth.</p>
+</div>
+</div>
+</article>
+</section>
+<div class="mt-12 mb-24 flex justify-center">
+<button class="px-8 py-3 bg-[#003366] text-white font-label text-sm font-bold uppercase tracking-widest rounded-xl hover:bg-primary/90 transition-all active:scale-95" style="">Load Older Announcements</button>
+</div>
+</main>
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-[#ffffff]/80 dark:bg-slate-950/80 backdrop-blur-xl shadow-[0_-4px_24px_rgba(0,30,64,0.06)] dark:shadow-none z-50 rounded-t-3xl">
+<a class="flex flex-col items-center justify-center text-[#102125]/70 dark:text-slate-400 px-5 py-2 hover:bg-[#f2f4f6] dark:hover:bg-slate-800 rounded-2xl transition-all active:scale-98" href="#" style="">
+<span class="material-symbols-outlined" style="">home</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[11px] font-medium mt-1" style="">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#102125]/70 dark:text-slate-400 px-5 py-2 hover:bg-[#f2f4f6] dark:hover:bg-slate-800 rounded-2xl transition-all active:scale-98" href="#" style="">
+<span class="material-symbols-outlined" style="">calendar_month</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[11px] font-medium mt-1" style="">Events</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#baeaff] dark:bg-[#003366] text-[#001f29] dark:text-[#baeaff] rounded-2xl px-5 py-2 active:scale-98 transition-all" href="#" style="">
+<span class="material-symbols-outlined" style="font-variation-settings: &quot;FILL&quot; 1;">campaign</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[11px] font-medium mt-1" style="">Announcements</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#102125]/70 dark:text-slate-400 px-5 py-2 hover:bg-[#f2f4f6] dark:hover:bg-slate-800 rounded-2xl transition-all active:scale-98" href="#" style="">
+<span class="material-symbols-outlined" style="">contact_support</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[11px] font-medium mt-1" style="">Feedback</span>
+</a>
+</nav>
+</body></html>
+
+<!-- Events List (Blue) -->
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Events Hub | PERMAS Hub</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#003366",
+                        "on-primary": "#ffffff",
+                        "primary-container": "#baeaff",
+                        "on-primary-container": "#001f29",
+                        "secondary": "#001e40",
+                        "surface": "#f7f9fb",
+                        "on-surface": "#102125",
+                        "surface-variant": "#eceef0",
+                        "on-surface-variant": "#44474e",
+                        "outline": "#74777f",
+                        "background": "#f7f9fb"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.5rem",
+                        "lg": "0.75rem",
+                        "xl": "1rem",
+                        "2xl": "1.5rem",
+                        "3xl": "2rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Inter"],
+                        "label": ["Plus Jakarta Sans"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
+        .headline-font { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    </style>
+<style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface antialiased pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#f7f9fb]/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-[#eceef0] dark:border-slate-800">
+<div class="flex justify-between items-center px-6 h-16 w-full max-w-7xl mx-auto">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#001e40] dark:text-[#baeaff] cursor-pointer active:scale-95 transition-transform duration-100" data-icon="school" style="">school</span>
+<h1 class="text-xl font-bold text-[#001e40] dark:text-[#baeaff] tracking-tight headline-font" style="">PERMAS Hub</h1>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#001e40] dark:text-[#baeaff] p-2 hover:bg-[#eceef0]/50 dark:hover:bg-slate-800/50 rounded-full transition-colors" data-icon="search" style="">search</span>
+<span class="material-symbols-outlined text-[#001e40] dark:text-[#baeaff] p-2 hover:bg-[#eceef0]/50 dark:hover:bg-slate-800/50 rounded-full transition-colors" data-icon="notifications" style="">notifications</span>
+</div>
+</div>
+</header>
+<main class="pt-24 px-6 max-w-4xl mx-auto">
+<!-- Hero Header -->
+<section class="mb-10">
+<h2 class="text-5xl md:text-7xl font-extrabold headline-font tracking-tight mb-4 text-[#001e40]" style="">Events</h2>
+<p class="text-on-surface-variant text-lg max-w-xl font-medium" style="">Discover, participate, and lead within the university community. Your gateway to all campus activities.</p>
+</section>
+<!-- Filters Section -->
+<section class="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
+<div class="flex flex-wrap gap-2">
+<button class="bg-[#003366] text-white px-6 py-2 rounded-full font-bold text-sm tracking-wide headline-font" style="">All Events</button>
+<button class="bg-surface-variant text-[#001e40] px-6 py-2 rounded-full font-bold text-sm tracking-wide hover:bg-[#eceef0] transition-colors headline-font" style="">Academic</button>
+<button class="bg-surface-variant text-[#001e40] px-6 py-2 rounded-full font-bold text-sm tracking-wide hover:bg-[#eceef0] transition-colors headline-font" style="">Social</button>
+<button class="bg-surface-variant text-[#001e40] px-6 py-2 rounded-full font-bold text-sm tracking-wide hover:bg-[#eceef0] transition-colors headline-font" style="">Career</button>
+</div>
+<div class="flex items-center gap-4 bg-[#eceef0]/50 px-4 py-2 rounded-lg border border-[#eceef0]">
+<span class="material-symbols-outlined text-on-surface-variant text-xl" data-icon="filter_list" style="">filter_list</span>
+<span class="text-sm font-bold text-[#001e40] headline-font" style="">Sort by: Newest</span>
+</div>
+</section>
+<!-- Events List -->
+<section class="space-y-8">
+<!-- Event Card 1 -->
+<div class="group relative bg-white p-6 flex flex-col md:flex-row gap-8 transition-all hover:shadow-[0_8px_32px_rgba(0,30,64,0.06)] rounded-2xl border border-[#eceef0] hover:border-primary-container">
+<div class="w-full md:w-48 h-48 bg-surface-variant overflow-hidden rounded-xl flex-shrink-0">
+<img alt="Conference Hall" class="w-full h-full object-cover transition-all duration-500" data-alt="Modern university auditorium with focused lighting on stage and students sitting in minimalist gray chairs" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAR5H--3-zF08sjbz-bf8rfbXIn6fZlfWP6DLgS5QzHfEx9ri39apwmMoeWnn_iih84oS7D9tUUAJno-0gSPyb0E7a-DL_0zW-tAgQW25gFv6Y11hOafgu7cC0ZbwaEqx9pdr8vCrR0sZ8-Bq3h_h45QyMLUfZcsgfCNBts6A99cMVn9intmYCatyzPuTlBM7lBSXVJZHYWaWcmXM7mnln2RjoyXLEpID_PVZxhgACsKDDq2NRElA5hIarUWRmdxiMc1v2ocOEisBwC" style="">
+</div>
+<div class="flex-grow flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-2">
+<span class="bg-primary-container text-on-primary-container text-[10px] px-3 py-1 rounded-full font-black tracking-widest uppercase headline-font" style="">Open</span>
+<span class="text-primary font-bold text-xs headline-font tracking-widest uppercase" style="">Academic</span>
+</div>
+<h3 class="text-2xl font-bold text-[#001e40] mb-4 leading-tight group-hover:text-primary transition-colors headline-font" style="">PERMAS Team Building</h3>
+<div class="space-y-2">
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-lg text-primary" data-icon="calendar_today" style="">calendar_today</span>
+<span class="text-sm font-semibold" style="">October 24, 2026 • 10:00 AM</span>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-lg text-primary" data-icon="location_on" style="">location_on</span>
+<span class="text-sm font-semibold" style="">L50, UTM</span>
+</div>
+</div>
+</div>
+<div class="mt-6 flex justify-end">
+<button class="text-primary font-black text-xs tracking-widest uppercase flex items-center gap-2 group/btn headline-font" style="">
+                        View Details 
+                        <span class="material-symbols-outlined text-sm group-hover/btn:translate-x-1 transition-transform" data-icon="arrow_forward" style="">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Event Card 2 -->
+<div class="group relative bg-white p-6 flex flex-col md:flex-row gap-8 transition-all hover:shadow-[0_8px_32px_rgba(0,30,64,0.06)] rounded-2xl border border-[#eceef0] hover:border-primary-container opacity-80">
+<div class="w-full md:w-48 h-48 bg-surface-variant overflow-hidden rounded-xl flex-shrink-0">
+<img alt="Networking event" class="w-full h-full object-cover transition-all duration-500 grayscale" data-alt="Close-up of a student holding a microphone at a campus talk, professional atmosphere, monochromatic blue and gray lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDBAdkOZuHx0XJqkEIhPzUyZRJQv_0XLALdfSH5HVKTv2801znprn3klI8vcZilbzqi8PLXkoPOPpIYhNb0rkadwjrB6J604iQHf4b-XGiFaV9cKRTba0FsyCCOQq4aQOboe5zyGtewyswYab7IZO4HP4WbX2h4Yz4RqtzcDWahSAvHBR_3XWRPN2iloGBbaksJtAOyryotTZoMuUea2H6-mczmMVU1DUMzgUt7ENAmjw07OUmEwQdV5-elL6Ly5rjWfd3gCQp-muYb" style="">
+</div>
+<div class="flex-grow flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-2">
+<span class="bg-surface-variant text-on-surface-variant text-[10px] px-3 py-1 rounded-full font-black tracking-widest uppercase headline-font" style="">Closed</span>
+<span class="text-on-surface-variant font-bold text-xs headline-font tracking-widest uppercase" style="">Career</span>
+</div>
+<h3 class="text-2xl font-bold text-on-surface-variant mb-4 leading-tight headline-font" style="">Career Fair: Tech &amp; Innovation</h3>
+<div class="space-y-2">
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-lg" data-icon="calendar_today" style="">calendar_today</span>
+<span class="text-sm font-semibold" style="">October 15, 2024 • 09:00 AM</span>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-lg" data-icon="location_on" style="">location_on</span>
+<span class="text-sm font-semibold" style="">Student Activity Center</span>
+</div>
+</div>
+</div>
+<div class="mt-6 flex justify-end">
+<button class="text-on-surface-variant font-black text-xs tracking-widest uppercase flex items-center gap-2 headline-font" style="">
+                        Archived
+                        <span class="material-symbols-outlined text-sm" data-icon="lock" style="">lock</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Event Card 3 -->
+<div class="group relative bg-white p-6 flex flex-col md:flex-row gap-8 transition-all hover:shadow-[0_8px_32px_rgba(0,30,64,0.06)] rounded-2xl border border-[#eceef0] hover:border-primary-container">
+<div class="w-full md:w-48 h-48 bg-surface-variant overflow-hidden rounded-xl flex-shrink-0">
+<img alt="Gala night" class="w-full h-full object-cover transition-all duration-500" data-alt="Interior of a beautifully decorated student hall for a social gathering, soft bokeh lighting, elegant furniture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDjKitB50kwx4nPFu7YEjwgbZsp5a7FPcCQCdpTYJlta3m9rrkRH70Znx5UYcWsstmwV6egWnCoFX2JDhcQ_F3yHvfHREEvBZ22JixT0gYtr7NsSxMuV_va5Bw9c9SCpdMAwsu0RS_dY9tR9sZi2cqo0c3MEqCf6xfcG02_jKUOHw-hVPhAYkNuXGwCNbhp-CJSX4f0w_d4GrMKgo1LbWEjAUAXTViaSz-6G9qrDPSE9y5BRmFfW5Ta8VNPqu2e8kNhk8ahbRVhdEa" style="">
+</div>
+<div class="flex-grow flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-2">
+<span class="bg-primary-container text-on-primary-container text-[10px] px-3 py-1 rounded-full font-black tracking-widest uppercase headline-font" style="">Open</span>
+<span class="text-primary font-bold text-xs headline-font tracking-widest uppercase" style="">Social</span>
+</div>
+<h3 class="text-2xl font-bold text-[#001e40] mb-4 leading-tight group-hover:text-primary transition-colors headline-font" style="">PERMAS Gala Night</h3>
+<div class="space-y-2">
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-lg text-primary" data-icon="calendar_today" style="">calendar_today</span>
+<span class="text-sm font-semibold" style="">November 02, 2024 • 06:00 PM</span>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-lg text-primary" data-icon="location_on" style="">location_on</span>
+<span class="text-sm font-semibold" style="">UTM</span>
+</div>
+</div>
+</div>
+<div class="mt-6 flex justify-end">
+<button class="text-primary font-black text-xs tracking-widest uppercase flex items-center gap-2 group/btn headline-font" style="">
+                        View Details 
+                        <span class="material-symbols-outlined text-sm group-hover/btn:translate-x-1 transition-transform" data-icon="arrow_forward" style="">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-[#ffffff]/80 dark:bg-slate-950/80 backdrop-blur-xl z-50 rounded-t-3xl shadow-[0_-4px_24px_rgba(0,30,64,0.06)] dark:shadow-none border-t border-[#eceef0] dark:border-slate-800">
+<!-- Home -->
+<a class="flex flex-col items-center justify-center text-[#102125]/70 dark:text-slate-400 px-5 py-2 hover:bg-[#f2f4f6] dark:hover:bg-slate-800 rounded-2xl transition-all active:scale-98" href="#" style="">
+<span class="material-symbols-outlined mb-1" data-icon="home" style="">home</span>
+<span class="font-['Plus_Jakarta_SANS'] text-[11px] font-medium" style="">Home</span>
+</a>
+<!-- Events (Active) -->
+<a class="flex flex-col items-center justify-center bg-[#baeaff] dark:bg-[#003366] text-[#001f29] dark:text-[#baeaff] rounded-2xl px-5 py-2 active:scale-98 transition-all" href="#" style="">
+<span class="material-symbols-outlined mb-1" data-icon="calendar_month" style="">calendar_month</span>
+<span class="font-['Plus_Jakarta_SANS'] text-[11px] font-medium" style="">Events</span>
+</a>
+<!-- Announcements -->
+<a class="flex flex-col items-center justify-center text-[#102125]/70 dark:text-slate-400 px-5 py-2 hover:bg-[#f2f4f6] dark:hover:bg-slate-800 rounded-2xl transition-all active:scale-98" href="#" style="">
+<span class="material-symbols-outlined mb-1" data-icon="campaign" style="">campaign</span>
+<span class="font-['Plus_Jakarta_SANS'] text-[11px] font-medium" style="">Announcements</span>
+</a>
+<!-- Hotline -->
+<a class="flex flex-col items-center justify-center text-[#102125]/70 dark:text-slate-400 px-5 py-2 hover:bg-[#f2f4f6] dark:hover:bg-slate-800 rounded-2xl transition-all active:scale-98" href="#" style="">
+<span class="material-symbols-outlined mb-1" data-icon="contact_support" style="">contact_support</span>
+<span class="font-['Plus_Jakarta_SANS'] text-[11px] font-medium" style="">Feedback</span>
+</a>
+</nav>
+</body></html>
