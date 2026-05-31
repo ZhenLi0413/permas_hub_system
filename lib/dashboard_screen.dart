@@ -210,6 +210,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Text(
             role == 'admin'
                 ? 'Admin access is active for event and announcement management.'
+                : role == 'committee'
+                ? 'Committee access is active for event management.'
                 : 'Your central PERMAS community command center.',
             style: const TextStyle(
               color: textSecondary,
@@ -280,7 +282,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 _RecentActivityItem(
                   title: 'Firestore Events Service',
                   subtitle:
-                      'Image path, title, description, date, time, location, type.',
+                      'Title, description, date, time, venue, category, status, registration due date, optional image.',
                   icon: Icons.event_available,
                   onTap: () => setState(() => _selectedTab = 1),
                 ),
@@ -614,5 +616,3 @@ class _RecentActivityItem extends StatelessWidget {
     );
   }
 }
-
-

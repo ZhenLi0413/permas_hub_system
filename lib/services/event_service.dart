@@ -14,12 +14,12 @@ class EventService {
       _firestore.collection('events');
 
   Stream<List<EventItem>> watchEvents({
-    String filterType = 'all',
+    String filterCategory = 'all',
     EventSort sort = EventSort.upcoming,
   }) {
     return _events.snapshots().map((snapshot) {
       final events = snapshot.docs.map(EventItem.fromSnapshot).where((event) {
-        return filterType == 'all' || event.type == filterType;
+        return filterCategory == 'all' || event.category == filterCategory;
       }).toList();
 
       events.sort((a, b) {
@@ -82,8 +82,10 @@ class EventService {
             'A community bonding session with collaborative activities for members and committees.',
         date: now.add(const Duration(days: 7)),
         time: '10:00 AM',
-        location: 'L50, UTM',
-        type: 'academic',
+        venue: 'L50, UTM',
+        category: 'academic',
+        status: 'open',
+        registrationDueDate: now.add(const Duration(days: 5)),
         createdBy: createdBy,
       ),
       EventItem(
@@ -94,8 +96,10 @@ class EventService {
             'Meet industry guests, explore internship pathways, and prepare for early career opportunities.',
         date: now.add(const Duration(days: 14)),
         time: '09:00 AM',
-        location: 'Student Activity Center',
-        type: 'career',
+        venue: 'Student Activity Center',
+        category: 'career',
+        status: 'open',
+        registrationDueDate: now.add(const Duration(days: 10)),
         createdBy: createdBy,
       ),
       EventItem(
@@ -106,8 +110,10 @@ class EventService {
             'An evening celebration for the PERMAS community with performances and networking.',
         date: now.add(const Duration(days: 30)),
         time: '06:00 PM',
-        location: 'UTM',
-        type: 'social',
+        venue: 'UTM',
+        category: 'social',
+        status: 'open',
+        registrationDueDate: now.add(const Duration(days: 21)),
         createdBy: createdBy,
       ),
     ];

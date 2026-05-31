@@ -165,6 +165,9 @@ class ProfileScreen extends StatelessWidget {
     if (role == 'admin') {
       return 'Admin';
     }
+    if (role == 'committee') {
+      return 'Committee';
+    }
     return 'Member';
   }
 }
@@ -203,5 +206,3 @@ class _ProfileInfoRow extends StatelessWidget {
     );
   }
 }
-
-

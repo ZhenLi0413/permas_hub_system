@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class AnnouncementItem {
   const AnnouncementItem({
     required this.id,
-    required this.imagePath,
+    this.imagePath,
     required this.type,
     required this.date,
     required this.title,
@@ -14,7 +14,7 @@ class AnnouncementItem {
   });
 
   final String id;
-  final String imagePath;
+  final String? imagePath;
   final String type;
   final DateTime date;
   final String title;
@@ -25,6 +25,7 @@ class AnnouncementItem {
 
   static const defaultImagePath = 'assets/mountkinabalu.jpg';
 
+  bool get hasImage => imagePath != null && imagePath!.trim().isNotEmpty;
   bool get isUrgent => type == 'urgent';
 
   static AnnouncementItem fromSnapshot(
@@ -33,7 +34,7 @@ class AnnouncementItem {
     final data = snapshot.data() ?? <String, dynamic>{};
     return AnnouncementItem(
       id: snapshot.id,
-      imagePath: data['imagePath'] as String? ?? defaultImagePath,
+      imagePath: _readOptionalString(data['imagePath']),
       type: data['type'] as String? ?? 'general',
       date: _readDate(data['date']) ?? DateTime.now(),
       title: data['title'] as String? ?? 'Untitled Announcement',
@@ -46,7 +47,7 @@ class AnnouncementItem {
 
   Map<String, Object?> toFirestore({required String createdBy}) {
     return <String, Object?>{
-      'imagePath': imagePath,
+      'imagePath': _readOptionalString(imagePath),
       'type': type,
       'date': Timestamp.fromDate(DateTime(date.year, date.month, date.day)),
       'title': title,
@@ -54,6 +55,14 @@ class AnnouncementItem {
       'createdBy': createdBy,
       'updatedAt': FieldValue.serverTimestamp(),
     };
+  }
+
+  static String? _readOptionalString(Object? value) {
+    if (value is! String) {
+      return null;
+    }
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
   }
 
   static DateTime? _readDate(Object? value) {

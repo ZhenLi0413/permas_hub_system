@@ -259,20 +259,16 @@ class _AnnouncementCard extends StatelessWidget {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Image.asset(
-                        announcement.imagePath,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: const Color(0xFFECEEF0),
-                            child: const Icon(
-                              Icons.image_not_supported_outlined,
-                              color: Color(0xFF4A5D72),
-                              size: 42,
-                            ),
-                          );
-                        },
-                      ),
+                      if (announcement.hasImage)
+                        Image.asset(
+                          announcement.imagePath!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const _AnnouncementImageFallback();
+                          },
+                        )
+                      else
+                        const _AnnouncementImageFallback(),
                       const DecoratedBox(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -412,16 +408,15 @@ class _AnnouncementDetailsSheet extends StatelessWidget {
               borderRadius: BorderRadius.circular(18),
               child: SizedBox(
                 height: 180,
-                child: Image.asset(
-                  announcement.imagePath,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: const Color(0xFFECEEF0),
-                      child: const Icon(Icons.image_outlined, size: 48),
-                    );
-                  },
-                ),
+                child: announcement.hasImage
+                    ? Image.asset(
+                        announcement.imagePath!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const _AnnouncementImageFallback();
+                        },
+                      )
+                    : const _AnnouncementImageFallback(),
               ),
             ),
             const SizedBox(height: 18),
@@ -487,6 +482,22 @@ class _AnnouncementDetailsSheet extends StatelessWidget {
   }
 }
 
+class _AnnouncementImageFallback extends StatelessWidget {
+  const _AnnouncementImageFallback();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: const Color(0xFFECEEF0),
+      child: const Icon(
+        Icons.campaign_outlined,
+        color: Color(0xFF4A5D72),
+        size: 42,
+      ),
+    );
+  }
+}
+
 class AnnouncementEditorScreen extends StatefulWidget {
   const AnnouncementEditorScreen({
     super.key,
@@ -518,7 +529,7 @@ class _AnnouncementEditorScreenState extends State<AnnouncementEditorScreen> {
     super.initState();
     final announcement = widget.announcement;
     _imagePathController = TextEditingController(
-      text: announcement?.imagePath ?? AnnouncementItem.defaultImagePath,
+      text: announcement?.imagePath ?? '',
     );
     _titleController = TextEditingController(text: announcement?.title ?? '');
     _contentController = TextEditingController(
@@ -626,8 +637,9 @@ class _AnnouncementEditorScreenState extends State<AnnouncementEditorScreen> {
               children: [
                 _EditorField(
                   controller: _imagePathController,
-                  label: 'Image asset path',
+                  label: 'Image asset path (optional)',
                   hint: AnnouncementItem.defaultImagePath,
+                  isRequired: false,
                 ),
                 const SizedBox(height: 14),
                 DropdownButtonFormField<String>(
@@ -700,12 +712,14 @@ class _EditorField extends StatelessWidget {
     required this.controller,
     required this.label,
     required this.hint,
+    this.isRequired = true,
     this.maxLines = 1,
   });
 
   final TextEditingController controller;
   final String label;
   final String hint;
+  final bool isRequired;
   final int maxLines;
 
   @override
@@ -715,7 +729,7 @@ class _EditorField extends StatelessWidget {
       maxLines: maxLines,
       decoration: _formDecoration(label).copyWith(hintText: hint),
       validator: (value) {
-        if (value == null || value.trim().isEmpty) {
+        if (isRequired && (value == null || value.trim().isEmpty)) {
           return '$label is required.';
         }
         return null;

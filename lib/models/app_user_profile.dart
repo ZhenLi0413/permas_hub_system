@@ -22,6 +22,8 @@ class AppUserProfile {
   final DateTime? updatedAt;
 
   bool get isAdmin => role == 'admin';
+  bool get isCommittee => role == 'committee';
+  bool get canManageEvents => isAdmin || isCommittee;
 
   static AppUserProfile? fromSnapshot(
     DocumentSnapshot<Map<String, dynamic>> snapshot,
@@ -59,7 +61,9 @@ class AppUserProfile {
   }
 
   static String _normalizeRole(String? role) {
-    return role == 'admin' ? 'admin' : 'member';
+    if (role == 'admin' || role == 'committee') {
+      return role!;
+    }
+    return 'member';
   }
 }
-

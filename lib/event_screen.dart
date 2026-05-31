@@ -16,10 +16,10 @@ class EventsScreen extends StatefulWidget {
 }
 
 class _EventsScreenState extends State<EventsScreen> {
-  String _selectedType = 'all';
+  String _selectedCategory = 'all';
   EventSort _sort = EventSort.upcoming;
 
-  bool get _isAdmin => widget.profile?.isAdmin ?? false;
+  bool get _canManageEvents => widget.profile?.canManageEvents ?? false;
 
   Future<void> _openEditor([EventItem? event]) async {
     await Navigator.of(context).push(
@@ -78,7 +78,7 @@ class _EventsScreenState extends State<EventsScreen> {
       builder: (context) {
         return _EventDetailsSheet(
           event: event,
-          isAdmin: _isAdmin,
+          isAdmin: _canManageEvents,
           onEdit: () {
             Navigator.of(context).pop();
             _openEditor(event);
@@ -96,7 +96,7 @@ class _EventsScreenState extends State<EventsScreen> {
   Widget build(BuildContext context) {
     return StreamBuilder<List<EventItem>>(
       stream: widget.service.watchEvents(
-        filterType: _selectedType,
+        filterCategory: _selectedCategory,
         sort: _sort,
       ),
       builder: (context, snapshot) {
@@ -106,11 +106,11 @@ class _EventsScreenState extends State<EventsScreen> {
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
               sliver: SliverToBoxAdapter(
                 child: _EventsHeader(
-                  isAdmin: _isAdmin,
-                  selectedType: _selectedType,
+                  isAdmin: _canManageEvents,
+                  selectedCategory: _selectedCategory,
                   sort: _sort,
-                  onTypeChanged: (type) {
-                    setState(() => _selectedType = type);
+                  onCategoryChanged: (category) {
+                    setState(() => _selectedCategory = category);
                   },
                   onSortChanged: (sort) {
                     setState(() => _sort = sort);
@@ -140,7 +140,7 @@ class _EventsScreenState extends State<EventsScreen> {
                 child: _StateMessage(
                   icon: Icons.event_busy,
                   title: 'No events yet',
-                  subtitle: _isAdmin
+                  subtitle: _canManageEvents
                       ? 'Create the first event for the PERMAS community.'
                       : 'New PERMAS events will appear here soon.',
                 ),
@@ -155,7 +155,7 @@ class _EventsScreenState extends State<EventsScreen> {
                     final event = snapshot.data![index];
                     return _EventCard(
                       event: event,
-                      isAdmin: _isAdmin,
+                      isAdmin: _canManageEvents,
                       onTap: () => _openDetails(event),
                       onEdit: () => _openEditor(event),
                       onDelete: () => _deleteEvent(event),
@@ -173,17 +173,17 @@ class _EventsScreenState extends State<EventsScreen> {
 class _EventsHeader extends StatelessWidget {
   const _EventsHeader({
     required this.isAdmin,
-    required this.selectedType,
+    required this.selectedCategory,
     required this.sort,
-    required this.onTypeChanged,
+    required this.onCategoryChanged,
     required this.onSortChanged,
     required this.onAdd,
   });
 
   final bool isAdmin;
-  final String selectedType;
+  final String selectedCategory;
   final EventSort sort;
-  final ValueChanged<String> onTypeChanged;
+  final ValueChanged<String> onCategoryChanged;
   final ValueChanged<EventSort> onSortChanged;
   final VoidCallback onAdd;
 
@@ -242,11 +242,11 @@ class _EventsHeader extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           children: _filters.entries.map((entry) {
-            final selected = entry.key == selectedType;
+            final selected = entry.key == selectedCategory;
             return ChoiceChip(
               label: Text(entry.value),
               selected: selected,
-              onSelected: (_) => onTypeChanged(entry.key),
+              onSelected: (_) => onCategoryChanged(entry.key),
               selectedColor: const Color(0xFF003366),
               labelStyle: TextStyle(
                 color: selected ? Colors.white : const Color(0xFF001E40),
@@ -323,7 +323,7 @@ class _EventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final active = event.isUpcoming;
+    final active = event.isUpcoming && event.status == 'open';
 
     return Material(
       color: Colors.white,
@@ -347,42 +347,44 @@ class _EventCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child: SizedBox(
-                  height: 160,
-                  child: ColorFiltered(
-                    colorFilter: active
-                        ? const ColorFilter.mode(
-                            Colors.transparent,
-                            BlendMode.multiply,
-                          )
-                        : const ColorFilter.mode(
-                            Colors.grey,
-                            BlendMode.saturation,
-                          ),
-                    child: Image.asset(
-                      event.imagePath,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: const Color(0xFFECEEF0),
-                          child: const Icon(
-                            Icons.image_not_supported_outlined,
-                            color: Color(0xFF4A5D72),
-                            size: 42,
-                          ),
-                        );
-                      },
+              if (event.hasImage) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: SizedBox(
+                    height: 160,
+                    child: ColorFiltered(
+                      colorFilter: active
+                          ? const ColorFilter.mode(
+                              Colors.transparent,
+                              BlendMode.multiply,
+                            )
+                          : const ColorFilter.mode(
+                              Colors.grey,
+                              BlendMode.saturation,
+                            ),
+                      child: Image.asset(
+                        event.imagePath!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: const Color(0xFFECEEF0),
+                            child: const Icon(
+                              Icons.image_not_supported_outlined,
+                              color: Color(0xFF4A5D72),
+                              size: 42,
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 14),
+                const SizedBox(height: 14),
+              ],
               Row(
                 children: [
                   _Pill(
-                    text: active ? 'Open' : 'Closed',
+                    text: event.status.toUpperCase(),
                     background: active
                         ? const Color(0xFFBAEAFF)
                         : const Color(0xFFECEEF0),
@@ -392,7 +394,7 @@ class _EventCard extends StatelessWidget {
                   ),
                   const Spacer(),
                   Text(
-                    event.type.toUpperCase(),
+                    event.category.toUpperCase(),
                     style: const TextStyle(
                       color: Color(0xFF003366),
                       fontSize: 11,
@@ -433,7 +435,13 @@ class _EventCard extends StatelessWidget {
                 text: '${formatDisplayDate(event.date)} - ${event.time}',
               ),
               const SizedBox(height: 8),
-              _IconLine(icon: Icons.location_on_outlined, text: event.location),
+              _IconLine(icon: Icons.location_on_outlined, text: event.venue),
+              const SizedBox(height: 8),
+              _IconLine(
+                icon: Icons.how_to_reg_outlined,
+                text:
+                    'Register by ${formatDisplayDate(event.registrationDueDate)}',
+              ),
             ],
           ),
         ),
@@ -469,27 +477,29 @@ class _EventDetailsSheet extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: SizedBox(
-                height: 180,
-                child: Image.asset(
-                  event.imagePath,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: const Color(0xFFECEEF0),
-                      child: const Icon(Icons.image_outlined, size: 48),
-                    );
-                  },
+            if (event.hasImage) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: SizedBox(
+                  height: 180,
+                  child: Image.asset(
+                    event.imagePath!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: const Color(0xFFECEEF0),
+                        child: const Icon(Icons.image_outlined, size: 48),
+                      );
+                    },
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 18),
+              const SizedBox(height: 18),
+            ],
             Row(
               children: [
                 _Pill(
-                  text: event.type.toUpperCase(),
+                  text: event.category.toUpperCase(),
                   background: const Color(0xFF003366),
                   color: Colors.white,
                 ),
@@ -524,7 +534,18 @@ class _EventDetailsSheet extends StatelessWidget {
               text: '${formatDisplayDate(event.date)} - ${event.time}',
             ),
             const SizedBox(height: 8),
-            _IconLine(icon: Icons.location_on_outlined, text: event.location),
+            _IconLine(icon: Icons.location_on_outlined, text: event.venue),
+            const SizedBox(height: 8),
+            _IconLine(
+              icon: Icons.how_to_reg_outlined,
+              text:
+                  'Register by ${formatDisplayDate(event.registrationDueDate)}',
+            ),
+            const SizedBox(height: 8),
+            _IconLine(
+              icon: Icons.info_outline,
+              text: event.status.toUpperCase(),
+            ),
             const SizedBox(height: 18),
             Text(
               event.description,
@@ -563,26 +584,28 @@ class _EventEditorScreenState extends State<EventEditorScreen> {
   late final TextEditingController _titleController;
   late final TextEditingController _descriptionController;
   late final TextEditingController _timeController;
-  late final TextEditingController _locationController;
+  late final TextEditingController _venueController;
   late DateTime _date;
-  late String _type;
+  late DateTime _registrationDueDate;
+  late String _category;
+  late String _status;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
     final event = widget.event;
-    _imagePathController = TextEditingController(
-      text: event?.imagePath ?? 'assets/mountkinabalu.jpg',
-    );
+    _imagePathController = TextEditingController(text: event?.imagePath ?? '');
     _titleController = TextEditingController(text: event?.title ?? '');
     _descriptionController = TextEditingController(
       text: event?.description ?? '',
     );
     _timeController = TextEditingController(text: event?.time ?? '');
-    _locationController = TextEditingController(text: event?.location ?? '');
+    _venueController = TextEditingController(text: event?.venue ?? '');
     _date = event?.date ?? DateTime.now();
-    _type = event?.type ?? 'academic';
+    _registrationDueDate = event?.registrationDueDate ?? DateTime.now();
+    _category = event?.category ?? 'academic';
+    _status = event?.status ?? 'open';
   }
 
   @override
@@ -591,7 +614,7 @@ class _EventEditorScreenState extends State<EventEditorScreen> {
     _titleController.dispose();
     _descriptionController.dispose();
     _timeController.dispose();
-    _locationController.dispose();
+    _venueController.dispose();
     super.dispose();
   }
 
@@ -608,6 +631,19 @@ class _EventEditorScreenState extends State<EventEditorScreen> {
     setState(() => _date = picked);
   }
 
+  Future<void> _pickRegistrationDueDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      initialDate: _registrationDueDate,
+    );
+    if (picked == null || !mounted) {
+      return;
+    }
+    setState(() => _registrationDueDate = picked);
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -622,8 +658,10 @@ class _EventEditorScreenState extends State<EventEditorScreen> {
       description: _descriptionController.text.trim(),
       date: _date,
       time: _timeController.text.trim(),
-      location: _locationController.text.trim(),
-      type: _type,
+      venue: _venueController.text.trim(),
+      category: _category,
+      status: _status,
+      registrationDueDate: _registrationDueDate,
       createdBy: widget.event?.createdBy ?? widget.createdBy,
       createdAt: widget.event?.createdAt,
       updatedAt: widget.event?.updatedAt,
@@ -678,8 +716,9 @@ class _EventEditorScreenState extends State<EventEditorScreen> {
               children: [
                 _EditorField(
                   controller: _imagePathController,
-                  label: 'Image asset path',
+                  label: 'Image asset path (optional)',
                   hint: 'assets/mountkinabalu.jpg',
+                  isRequired: false,
                 ),
                 const SizedBox(height: 14),
                 _EditorField(
@@ -716,14 +755,14 @@ class _EventEditorScreenState extends State<EventEditorScreen> {
                 ),
                 const SizedBox(height: 14),
                 _EditorField(
-                  controller: _locationController,
-                  label: 'Location',
+                  controller: _venueController,
+                  label: 'Venue',
                   hint: 'L50, UTM',
                 ),
                 const SizedBox(height: 14),
                 DropdownButtonFormField<String>(
-                  initialValue: _type,
-                  decoration: _formDecoration('Type'),
+                  initialValue: _category,
+                  decoration: _formDecoration('Category'),
                   items: const [
                     DropdownMenuItem<String>(
                       value: 'academic',
@@ -740,9 +779,41 @@ class _EventEditorScreenState extends State<EventEditorScreen> {
                   ],
                   onChanged: (value) {
                     if (value != null) {
-                      setState(() => _type = value);
+                      setState(() => _category = value);
                     }
                   },
+                ),
+                const SizedBox(height: 14),
+                DropdownButtonFormField<String>(
+                  initialValue: _status,
+                  decoration: _formDecoration('Status'),
+                  items: const [
+                    DropdownMenuItem<String>(
+                      value: 'open',
+                      child: Text('Open'),
+                    ),
+                    DropdownMenuItem<String>(
+                      value: 'closed',
+                      child: Text('Closed'),
+                    ),
+                    DropdownMenuItem<String>(
+                      value: 'cancelled',
+                      child: Text('Cancelled'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => _status = value);
+                    }
+                  },
+                ),
+                const SizedBox(height: 14),
+                OutlinedButton.icon(
+                  onPressed: _pickRegistrationDueDate,
+                  icon: const Icon(Icons.how_to_reg_outlined),
+                  label: Text(
+                    'Registration due: ${formatIsoDate(_registrationDueDate)}',
+                  ),
                 ),
                 const SizedBox(height: 22),
                 SizedBox(
@@ -776,12 +847,14 @@ class _EditorField extends StatelessWidget {
     required this.controller,
     required this.label,
     required this.hint,
+    this.isRequired = true,
     this.maxLines = 1,
   });
 
   final TextEditingController controller;
   final String label;
   final String hint;
+  final bool isRequired;
   final int maxLines;
 
   @override
@@ -791,7 +864,7 @@ class _EditorField extends StatelessWidget {
       maxLines: maxLines,
       decoration: _formDecoration(label).copyWith(hintText: hint),
       validator: (value) {
-        if (value == null || value.trim().isEmpty) {
+        if (isRequired && (value == null || value.trim().isEmpty)) {
           return '$label is required.';
         }
         return null;

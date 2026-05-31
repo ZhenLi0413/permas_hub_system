@@ -3,29 +3,35 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class EventItem {
   const EventItem({
     required this.id,
-    required this.imagePath,
+    this.imagePath,
     required this.title,
     required this.description,
     required this.date,
     required this.time,
-    required this.location,
-    required this.type,
+    required this.venue,
+    required this.category,
+    required this.status,
+    required this.registrationDueDate,
     required this.createdBy,
     this.createdAt,
     this.updatedAt,
   });
 
   final String id;
-  final String imagePath;
+  final String? imagePath;
   final String title;
   final String description;
   final DateTime date;
   final String time;
-  final String location;
-  final String type;
+  final String venue;
+  final String category;
+  final String status;
+  final DateTime registrationDueDate;
   final String createdBy;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+
+  bool get hasImage => imagePath != null && imagePath!.trim().isNotEmpty;
 
   bool get isUpcoming {
     final today = DateTime.now();
@@ -40,13 +46,19 @@ class EventItem {
     final data = snapshot.data() ?? <String, dynamic>{};
     return EventItem(
       id: snapshot.id,
-      imagePath: data['imagePath'] as String? ?? 'assets/mountkinabalu.jpg',
+      imagePath: _readOptionalString(data['imagePath']),
       title: data['title'] as String? ?? 'Untitled Event',
       description: data['description'] as String? ?? '',
       date: _readDate(data['date']) ?? DateTime.now(),
       time: data['time'] as String? ?? '',
-      location: data['location'] as String? ?? '',
-      type: data['type'] as String? ?? 'academic',
+      venue: data['venue'] as String? ?? data['location'] as String? ?? '',
+      category:
+          data['category'] as String? ?? data['type'] as String? ?? 'academic',
+      status: data['status'] as String? ?? 'open',
+      registrationDueDate:
+          _readDate(data['registrationDueDate']) ??
+          _readDate(data['date']) ??
+          DateTime.now(),
       createdBy: data['createdBy'] as String? ?? '',
       createdAt: _readDate(data['createdAt']),
       updatedAt: _readDate(data['updatedAt']),
@@ -55,16 +67,32 @@ class EventItem {
 
   Map<String, Object?> toFirestore({required String createdBy}) {
     return <String, Object?>{
-      'imagePath': imagePath,
+      'imagePath': _readOptionalString(imagePath),
       'title': title,
       'description': description,
       'date': Timestamp.fromDate(DateTime(date.year, date.month, date.day)),
       'time': time,
-      'location': location,
-      'type': type,
+      'venue': venue,
+      'category': category,
+      'status': status,
+      'registrationDueDate': Timestamp.fromDate(
+        DateTime(
+          registrationDueDate.year,
+          registrationDueDate.month,
+          registrationDueDate.day,
+        ),
+      ),
       'createdBy': createdBy,
       'updatedAt': FieldValue.serverTimestamp(),
     };
+  }
+
+  static String? _readOptionalString(Object? value) {
+    if (value is! String) {
+      return null;
+    }
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
   }
 
   static DateTime? _readDate(Object? value) {
