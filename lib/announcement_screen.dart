@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'models/announcement_item.dart';
@@ -27,7 +28,9 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
         builder: (_) => AnnouncementEditorScreen(
           service: widget.service,
           announcement: announcement,
-          createdBy: widget.profile?.uid ?? '',
+          createdBy: widget.profile?.uid.isNotEmpty == true
+              ? widget.profile!.uid
+              : FirebaseAuth.instance.currentUser?.uid ?? '',
         ),
       ),
     );
