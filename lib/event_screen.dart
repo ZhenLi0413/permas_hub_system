@@ -1,8 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'models/app_user_profile.dart';
 import 'models/event_item.dart';
+import 'models/event_participation.dart';
 import 'services/event_service.dart';
+import 'services/participation_service.dart';
 
 class EventsScreen extends StatefulWidget {
   EventsScreen({super.key, required this.profile, EventService? service})
@@ -18,6 +21,7 @@ class EventsScreen extends StatefulWidget {
 class _EventsScreenState extends State<EventsScreen> {
   String _selectedCategory = 'all';
   EventSort _sort = EventSort.upcoming;
+  final _participationService = ParticipationService();
 
   bool get _canManageEvents => widget.profile?.canManageEvents ?? false;
 
@@ -27,7 +31,9 @@ class _EventsScreenState extends State<EventsScreen> {
         builder: (_) => EventEditorScreen(
           service: widget.service,
           event: event,
-          createdBy: widget.profile?.uid ?? '',
+          createdBy: widget.profile?.uid.isNotEmpty == true
+              ? widget.profile!.uid
+              : FirebaseAuth.instance.currentUser?.uid ?? '',
         ),
       ),
     );
@@ -79,6 +85,10 @@ class _EventsScreenState extends State<EventsScreen> {
         return _EventDetailsSheet(
           event: event,
           isAdmin: _canManageEvents,
+          participationService: _participationService,
+          userId: widget.profile?.uid.isNotEmpty == true
+              ? widget.profile!.uid
+              : FirebaseAuth.instance.currentUser?.uid ?? '',
           onEdit: () {
             Navigator.of(context).pop();
             _openEditor(event);
@@ -87,6 +97,31 @@ class _EventsScreenState extends State<EventsScreen> {
             Navigator.of(context).pop();
             _deleteEvent(event);
           },
+          onRegister: () {
+            Navigator.of(context).pop();
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => EventRegistrationScreen(
+                  eventId: event.id,
+                  userId: widget.profile?.uid.isNotEmpty == true
+                      ? widget.profile!.uid
+                      : FirebaseAuth.instance.currentUser?.uid ?? '',
+                  participationService: _participationService,
+                ),
+              ),
+            );
+          },
+          onViewParticipants: () {
+            Navigator.of(context).pop();
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => EventParticipantsScreen(
+                  event: event,
+                  participationService: _participationService,
+                ),
+              ),
+            );
+          },
         );
       },
     );
@@ -94,76 +129,91 @@ class _EventsScreenState extends State<EventsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<List<EventItem>>(
-      stream: widget.service.watchEvents(
-        filterCategory: _selectedCategory,
-        sort: _sort,
-      ),
-      builder: (context, snapshot) {
-        return CustomScrollView(
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
-              sliver: SliverToBoxAdapter(
-                child: _EventsHeader(
-                  isAdmin: _canManageEvents,
-                  selectedCategory: _selectedCategory,
-                  sort: _sort,
-                  onCategoryChanged: (category) {
-                    setState(() => _selectedCategory = category);
-                  },
-                  onSortChanged: (sort) {
-                    setState(() => _sort = sort);
-                  },
-                  onAdd: () => _openEditor(),
-                ),
-              ),
-            ),
-            if (snapshot.hasError)
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: _StateMessage(
-                  icon: Icons.cloud_off,
-                  title: 'Unable to load events',
-                  subtitle: snapshot.error.toString(),
-                ),
-              )
-            else if (snapshot.connectionState == ConnectionState.waiting &&
-                !snapshot.hasData)
-              const SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else if ((snapshot.data ?? const <EventItem>[]).isEmpty)
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: _StateMessage(
-                  icon: Icons.event_busy,
-                  title: 'No events yet',
-                  subtitle: _canManageEvents
-                      ? 'Create the first event for the PERMAS community.'
-                      : 'New PERMAS events will appear here soon.',
-                ),
-              )
-            else
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
-                sliver: SliverList.separated(
-                  itemCount: snapshot.data!.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 18),
-                  itemBuilder: (context, index) {
-                    final event = snapshot.data![index];
-                    return _EventCard(
-                      event: event,
+    final userId = widget.profile?.uid.isNotEmpty == true
+        ? widget.profile!.uid
+        : FirebaseAuth.instance.currentUser?.uid ?? '';
+
+    return StreamBuilder<List<EventParticipation>>(
+      stream: _participationService.watchUserParticipations(userId),
+      builder: (context, participationSnapshot) {
+        final participations = participationSnapshot.data ?? const [];
+        final statusMap = {
+          for (var p in participations) p.eventId: p.status
+        };
+
+        return StreamBuilder<List<EventItem>>(
+          stream: widget.service.watchEvents(
+            filterCategory: _selectedCategory,
+            sort: _sort,
+          ),
+          builder: (context, snapshot) {
+            return CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+                  sliver: SliverToBoxAdapter(
+                    child: _EventsHeader(
                       isAdmin: _canManageEvents,
-                      onTap: () => _openDetails(event),
-                      onEdit: () => _openEditor(event),
-                      onDelete: () => _deleteEvent(event),
-                    );
-                  },
+                      selectedCategory: _selectedCategory,
+                      sort: _sort,
+                      onCategoryChanged: (category) {
+                        setState(() => _selectedCategory = category);
+                      },
+                      onSortChanged: (sort) {
+                        setState(() => _sort = sort);
+                      },
+                      onAdd: () => _openEditor(),
+                    ),
+                  ),
                 ),
-              ),
-          ],
+                if (snapshot.hasError)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _StateMessage(
+                      icon: Icons.cloud_off,
+                      title: 'Unable to load events',
+                      subtitle: snapshot.error.toString(),
+                    ),
+                  )
+                else if (snapshot.connectionState == ConnectionState.waiting &&
+                    !snapshot.hasData)
+                  const SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if ((snapshot.data ?? const <EventItem>[]).isEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _StateMessage(
+                      icon: Icons.event_busy,
+                      title: 'No events yet',
+                      subtitle: _canManageEvents
+                          ? 'Create the first event for the PERMAS community.'
+                          : 'New PERMAS events will appear here soon.',
+                    ),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
+                    sliver: SliverList.separated(
+                      itemCount: snapshot.data!.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 18),
+                      itemBuilder: (context, index) {
+                        final event = snapshot.data![index];
+                        return _EventCard(
+                          event: event,
+                          isAdmin: _canManageEvents,
+                          participationStatus: statusMap[event.id],
+                          onTap: () => _openDetails(event),
+                          onEdit: () => _openEditor(event),
+                          onDelete: () => _deleteEvent(event),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            );
+          },
         );
       },
     );
@@ -313,6 +363,7 @@ class _EventCard extends StatelessWidget {
     required this.onTap,
     required this.onEdit,
     required this.onDelete,
+    this.participationStatus,
   });
 
   final EventItem event;
@@ -320,6 +371,7 @@ class _EventCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final String? participationStatus;
 
   @override
   Widget build(BuildContext context) {
@@ -392,6 +444,14 @@ class _EventCard extends StatelessWidget {
                         ? const Color(0xFF001E40)
                         : const Color(0xFF4A5D72),
                   ),
+                  if (participationStatus != null) ...[
+                    const SizedBox(width: 8),
+                    _Pill(
+                      text: participationStatus!.toUpperCase(),
+                      background: _getStatusBgColor(participationStatus!),
+                      color: _getStatusTextColor(participationStatus!),
+                    ),
+                  ],
                   const Spacer(),
                   Text(
                     event.category.toUpperCase(),
@@ -448,6 +508,7 @@ class _EventCard extends StatelessWidget {
       ),
     );
   }
+
 }
 
 class _EventDetailsSheet extends StatelessWidget {
@@ -456,12 +517,35 @@ class _EventDetailsSheet extends StatelessWidget {
     required this.isAdmin,
     required this.onEdit,
     required this.onDelete,
+    required this.participationService,
+    required this.userId,
+    required this.onRegister,
+    required this.onViewParticipants,
   });
 
   final EventItem event;
   final bool isAdmin;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final ParticipationService participationService;
+  final String userId;
+  final VoidCallback onRegister;
+  final VoidCallback onViewParticipants;
+
+  Future<void> _markAsAttended(BuildContext context, String docId) async {
+    try {
+      await participationService.updateStatus(docId, 'attended');
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Your attendance has been recorded.')),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to record attendance: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -555,6 +639,116 @@ class _EventDetailsSheet extends StatelessWidget {
                 height: 1.55,
               ),
             ),
+            const SizedBox(height: 24),
+            if (!isAdmin) ...[
+              StreamBuilder<EventParticipation?>(
+                stream: participationService.watchParticipation(event.id, userId),
+                builder: (context, snapshot) {
+                  final participation = snapshot.data;
+                  if (participation == null) {
+                    final isDeadlinePassed = DateTime.now().isAfter(event.registrationDueDate);
+                    final isOpen = event.status == 'open' && !isDeadlinePassed;
+
+                    return SizedBox(
+                      height: 50,
+                      child: FilledButton.icon(
+                        onPressed: isOpen ? onRegister : null,
+                        icon: const Icon(Icons.assignment_outlined),
+                        label: Text(isDeadlinePassed
+                            ? 'REGISTRATION CLOSED (DEADLINE PASSED)'
+                            : isOpen
+                                ? 'REGISTER FOR EVENT'
+                                : 'REGISTRATION CLOSED'),
+                      ),
+                    );
+                  }
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0F4F8),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFFD0D8E1)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Text(
+                                  'YOUR PARTICIPATION',
+                                  style: TextStyle(
+                                    color: Color(0xFF001E40),
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                const Spacer(),
+                                _Pill(
+                                  text: participation.status.toUpperCase(),
+                                  background: _getStatusBgColor(participation.status),
+                                  color: _getStatusTextColor(participation.status),
+                                ),
+                              ],
+                            ),
+                            const Divider(height: 24, color: Color(0xFFD0D8E1)),
+                            _DetailRow(label: 'Full Name', value: participation.fullName),
+                            const SizedBox(height: 8),
+                            _DetailRow(label: 'Faculty', value: participation.faculty),
+                            const SizedBox(height: 8),
+                            _DetailRow(label: 'Matric No.', value: participation.matricNumber),
+                            const SizedBox(height: 8),
+                            _DetailRow(label: 'College', value: participation.college),
+                          ],
+                        ),
+                      ),
+                      if (participation.status == 'confirmed') ...[
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          height: 50,
+                          child: FilledButton.icon(
+                            onPressed: () => _markAsAttended(context, participation.id),
+                            icon: const Icon(Icons.assignment_turned_in_outlined),
+                            label: const Text('MARK AS ATTENDED'),
+                          ),
+                        ),
+                      ] else if (participation.status == 'attended') ...[
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD4EDDA),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Text(
+                            'Thank you! Your attendance has been recorded.',
+                            style: TextStyle(
+                              color: Color(0xFF155724),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  );
+                },
+              ),
+            ] else ...[
+              SizedBox(
+                height: 50,
+                child: FilledButton.icon(
+                  onPressed: onViewParticipants,
+                  icon: const Icon(Icons.people_outline),
+                  label: const Text('VIEW PARTICIPANTS'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF003366),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -1012,4 +1206,666 @@ String formatDisplayDate(DateTime date) {
     'DEC',
   ];
   return '${months[date.month - 1]} ${date.day}, ${date.year}';
+}
+
+Color _getStatusBgColor(String status) {
+  switch (status) {
+    case 'pending':
+      return const Color(0xFFFFF3CD);
+    case 'confirmed':
+      return const Color(0xFFD1ECF1);
+    case 'attended':
+      return const Color(0xFFD4EDDA);
+    default:
+      return const Color(0xFFECEEF0);
+  }
+}
+
+Color _getStatusTextColor(String status) {
+  switch (status) {
+    case 'pending':
+      return const Color(0xFF856404);
+    case 'confirmed':
+      return const Color(0xFF0C5460);
+    case 'attended':
+      return const Color(0xFF155724);
+    default:
+      return const Color(0xFF4A5D72);
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  const _DetailRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 90,
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF7A8A9C),
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              color: Color(0xFF001E40),
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class EventRegistrationScreen extends StatefulWidget {
+  const EventRegistrationScreen({
+    super.key,
+    required this.eventId,
+    required this.userId,
+    required this.participationService,
+  });
+
+  final String eventId;
+  final String userId;
+  final ParticipationService participationService;
+
+  @override
+  State<EventRegistrationScreen> createState() => _EventRegistrationScreenState();
+}
+
+class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _fullNameController = TextEditingController();
+  final _facultyController = TextEditingController();
+  final _matricNumberController = TextEditingController();
+  final _collegeController = TextEditingController();
+  bool _isSubmitting = false;
+
+  @override
+  void dispose() {
+    _fullNameController.dispose();
+    _facultyController.dispose();
+    _matricNumberController.dispose();
+    _collegeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      await widget.participationService.register(
+        eventId: widget.eventId,
+        userId: widget.userId,
+        fullName: _fullNameController.text,
+        faculty: _facultyController.text,
+        matricNumber: _matricNumberController.text,
+        college: _collegeController.text,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Registration submitted. Status is pending.')),
+      );
+      Navigator.of(context).pop();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Registration failed: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const primary = Color(0xFF003366);
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F9FB),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        foregroundColor: primary,
+        elevation: 0,
+        title: const Text('Event Registration'),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Join Activity',
+                  style: TextStyle(
+                    color: Color(0xFF001E40),
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Please fill in your correct information to participate in this club activity.',
+                  style: TextStyle(
+                    color: Color(0xFF4A5D72),
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                _RegistrationField(
+                  controller: _fullNameController,
+                  label: 'Full Name',
+                  hint: 'Enter your full name',
+                ),
+                const SizedBox(height: 16),
+                _RegistrationField(
+                  controller: _facultyController,
+                  label: 'Faculty',
+                  hint: 'e.g. Faculty of Computing',
+                ),
+                const SizedBox(height: 16),
+                _RegistrationField(
+                  controller: _matricNumberController,
+                  label: 'Matric Number',
+                  hint: 'e.g. A21CS0001',
+                ),
+                const SizedBox(height: 16),
+                _RegistrationField(
+                  controller: _collegeController,
+                  label: 'College',
+                  hint: 'e.g. Kolej Tun Razak',
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  height: 50,
+                  child: FilledButton(
+                    onPressed: _isSubmitting ? null : _submit,
+                    child: _isSubmitting
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text('SUBMIT REGISTRATION'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RegistrationField extends StatelessWidget {
+  const _RegistrationField({
+    required this.controller,
+    required this.label,
+    required this.hint,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final String hint;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      decoration: _formDecoration(label).copyWith(hintText: hint),
+      validator: (value) {
+        if (value == null || value.trim().isEmpty) {
+          return '$label is required.';
+        }
+        return null;
+      },
+    );
+  }
+}
+
+class EventParticipantsScreen extends StatefulWidget {
+  const EventParticipantsScreen({
+    super.key,
+    required this.event,
+    required this.participationService,
+  });
+
+  final EventItem event;
+  final ParticipationService participationService;
+
+  @override
+  State<EventParticipantsScreen> createState() => _EventParticipantsScreenState();
+}
+
+class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
+  bool _selectionMode = false;
+  final Set<String> _selectedIds = {};
+
+  Future<void> _updateStatus(String docId, String status) async {
+    try {
+      await widget.participationService.updateStatus(docId, status);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Participant marked as $status.')),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update status: $e')),
+      );
+    }
+  }
+
+  Future<void> _deleteParticipant(BuildContext context, String docId, String name) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Remove participant?'),
+          content: Text('Are you sure you want to remove "$name" from this event?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Remove'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await widget.participationService.deleteParticipation(docId);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Participant removed.')),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to remove participant: $e')),
+      );
+    }
+  }
+
+  void _toggleSelectionMode() {
+    setState(() {
+      _selectionMode = !_selectionMode;
+      if (!_selectionMode) {
+        _selectedIds.clear();
+      }
+    });
+  }
+
+  void _toggleParticipantSelection(String docId) {
+    setState(() {
+      if (!_selectedIds.add(docId)) {
+        _selectedIds.remove(docId);
+      }
+    });
+  }
+
+  void _toggleSelectAll(List<EventParticipation> participants) {
+    setState(() {
+      final allIds = participants.map((participant) => participant.id).toSet();
+      if (_selectedIds.length == allIds.length) {
+        _selectedIds.clear();
+      } else {
+        _selectedIds
+          ..clear()
+          ..addAll(allIds);
+      }
+    });
+  }
+
+  Future<void> _batchApprove(List<EventParticipation> participants) async {
+    final selectedPending = participants.where(
+      (participant) => _selectedIds.contains(participant.id) && participant.status == 'pending',
+    );
+
+    if (selectedPending.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No pending requests selected to approve.')),
+      );
+      return;
+    }
+
+    try {
+      await Future.wait(
+        selectedPending.map((participant) => widget.participationService.updateStatus(participant.id, 'confirmed')),
+      );
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${selectedPending.length} request(s) approved.')),
+      );
+      setState(() {
+        _selectedIds.clear();
+        _selectionMode = false;
+      });
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to approve selected participants: $e')),
+      );
+    }
+  }
+
+  Future<void> _batchDelete(List<EventParticipation> participants) async {
+    final selectedParticipants = participants.where((participant) => _selectedIds.contains(participant.id)).toList();
+    if (selectedParticipants.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No participants selected to remove.')),
+      );
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Remove selected participants?'),
+          content: Text('Are you sure you want to remove ${selectedParticipants.length} selected participant(s)?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Remove'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await Future.wait(
+        selectedParticipants.map((participant) => widget.participationService.deleteParticipation(participant.id)),
+      );
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${selectedParticipants.length} participant(s) removed.')),
+      );
+      setState(() {
+        _selectedIds.clear();
+        _selectionMode = false;
+      });
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to remove selected participants: $e')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const primary = Color(0xFF003366);
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F9FB),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        foregroundColor: primary,
+        elevation: 0,
+        title: const Text('Participants List'),
+        actions: [
+          if (!_selectionMode)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: TextButton.icon(
+                onPressed: _toggleSelectionMode,
+                icon: const Icon(Icons.check_box_outline_blank, color: Color(0xFF003366)),
+                label: const Text('Select', style: TextStyle(color: Color(0xFF003366))),
+              ),
+            )
+          else
+            IconButton(
+              tooltip: 'Cancel selection',
+              icon: const Icon(Icons.close),
+              onPressed: _toggleSelectionMode,
+            ),
+        ],
+      ),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.event.title,
+                    style: const TextStyle(
+                      color: Color(0xFF001E40),
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Manage registered participants for this event.',
+                    style: TextStyle(
+                      color: Color(0xFF4A5D72),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (_selectionMode)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFECEEF0)),
+                  ),
+                  child: Text(
+                    '${_selectedIds.length} selected',
+                    style: const TextStyle(
+                      color: Color(0xFF001E40),
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+            Expanded(
+              child: StreamBuilder<List<EventParticipation>>(
+                stream: widget.participationService.watchEventParticipations(widget.event.id),
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return _StateMessage(
+                      icon: Icons.error_outline,
+                      title: 'Error loading participants',
+                      subtitle: snapshot.error.toString(),
+                    );
+                  }
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  final list = snapshot.data ?? [];
+                  if (list.isEmpty) {
+                    return const _StateMessage(
+                      icon: Icons.people_outline,
+                      title: 'No participants yet',
+                      subtitle: 'When students register, they will appear here.',
+                    );
+                  }
+
+                  return Column(
+                    children: [
+                      if (_selectionMode)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          child: Row(
+                            children: [
+                              TextButton.icon(
+                                onPressed: () => _toggleSelectAll(list),
+                                icon: Icon(
+                                  _selectedIds.length == list.length ? Icons.check_box : Icons.check_box_outline_blank,
+                                  color: const Color(0xFF003366),
+                                ),
+                                label: Text(
+                                  _selectedIds.length == list.length ? 'Deselect All' : 'Select All',
+                                  style: const TextStyle(color: Color(0xFF003366)),
+                                ),
+                              ),
+                              const Spacer(),
+                              IconButton(
+                                tooltip: 'Approve selected',
+                                icon: const Icon(Icons.check_circle_outline, color: Colors.green),
+                                onPressed: _selectedIds.isNotEmpty ? () => _batchApprove(list) : null,
+                              ),
+                              IconButton(
+                                tooltip: 'Delete selected',
+                                icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                onPressed: _selectedIds.isNotEmpty ? () => _batchDelete(list) : null,
+                              ),
+                            ],
+                          ),
+                        ),
+                      Expanded(
+                        child: ListView.separated(
+                          padding: const EdgeInsets.all(20),
+                          itemCount: list.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final p = list[index];
+                            final isSelected = _selectedIds.contains(p.id);
+                            return InkWell(
+                              onTap: _selectionMode ? () => _toggleParticipantSelection(p.id) : null,
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: const Color(0xFFECEEF0)),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Color.fromRGBO(0, 30, 64, 0.03),
+                                      blurRadius: 10,
+                                      offset: Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  children: [
+                                    if (_selectionMode) ...[
+                                      Checkbox(
+                                        value: isSelected,
+                                        onChanged: (_) => _toggleParticipantSelection(p.id),
+                                      ),
+                                      const SizedBox(width: 8),
+                                    ],
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            p.fullName,
+                                            style: const TextStyle(
+                                              color: Color(0xFF001E40),
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Matric: ${p.matricNumber} • ${p.college}',
+                                            style: const TextStyle(
+                                              color: Color(0xFF4A5D72),
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                          Text(
+                                            p.faculty,
+                                            style: const TextStyle(
+                                              color: Color(0xFF4A5D72),
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          _Pill(
+                                            text: p.status.toUpperCase(),
+                                            background: _getStatusBgColor(p.status),
+                                            color: _getStatusTextColor(p.status),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Column(
+                                      children: [
+                                        if (p.status == 'pending')
+                                          IconButton(
+                                            tooltip: 'Approve',
+                                            icon: const Icon(Icons.check_circle_outline, color: Colors.green),
+                                            onPressed: () => _updateStatus(p.id, 'confirmed'),
+                                          ),
+                                        IconButton(
+                                          tooltip: 'Delete / Remove',
+                                          icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                          onPressed: () => _deleteParticipant(context, p.id, p.fullName),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
