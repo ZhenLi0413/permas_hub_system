@@ -66,6 +66,18 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    match /participations/{participationId} {
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow read: if signedIn() && (resource == null || resource.data.userId == request.auth.uid || canManageEvents());
+      allow update: if signedIn() && (
+        (resource.data.userId == request.auth.uid &&
+         request.resource.data.userId == request.auth.uid &&
+         (request.resource.data.status == resource.data.status || request.resource.data.status == 'pending')) ||
+        canManageEvents()
+      );
+      allow delete: if signedIn() && (resource.data.userId == request.auth.uid || canManageEvents());
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
