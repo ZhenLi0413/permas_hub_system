@@ -134,14 +134,23 @@ class _EventsScreenState extends State<EventsScreen> {
         : FirebaseAuth.instance.currentUser?.uid ?? '';
 
     return StreamBuilder<List<EventParticipation>>(
-      stream: _participationService.watchUserParticipations(userId),
-      builder: (context, participationSnapshot) {
-        final participations = participationSnapshot.data ?? const [];
-        final statusMap = {
-          for (var p in participations) p.eventId: p.status
-        };
+      stream: _participationService.watchAllParticipations(),
+      builder: (context, allParticipationSnapshot) {
+        final allParticipations = allParticipationSnapshot.data ?? const [];
+        final eventRegisteredCount = <String, int>{};
+        for (final p in allParticipations) {
+          eventRegisteredCount[p.eventId] = (eventRegisteredCount[p.eventId] ?? 0) + 1;
+        }
 
-        return StreamBuilder<List<EventItem>>(
+        return StreamBuilder<List<EventParticipation>>(
+          stream: _participationService.watchUserParticipations(userId),
+          builder: (context, participationSnapshot) {
+            final participations = participationSnapshot.data ?? const [];
+            final statusMap = {
+              for (var p in participations) p.eventId: p.status
+            };
+
+            return StreamBuilder<List<EventItem>>(
           stream: widget.service.watchEvents(
             filterCategory: _selectedCategory,
             sort: _sort,
@@ -204,6 +213,7 @@ class _EventsScreenState extends State<EventsScreen> {
                           event: event,
                           isAdmin: _canManageEvents,
                           participationStatus: statusMap[event.id],
+                          registeredCount: eventRegisteredCount[event.id] ?? 0,
                           onTap: () => _openDetails(event),
                           onEdit: () => _openEditor(event),
                           onDelete: () => _deleteEvent(event),
@@ -217,6 +227,8 @@ class _EventsScreenState extends State<EventsScreen> {
         );
       },
     );
+  },
+);
   }
 }
 
@@ -363,6 +375,7 @@ class _EventCard extends StatelessWidget {
     required this.onTap,
     required this.onEdit,
     required this.onDelete,
+    required this.registeredCount,
     this.participationStatus,
   });
 
@@ -371,6 +384,7 @@ class _EventCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final int registeredCount;
   final String? participationStatus;
 
   @override
@@ -502,6 +516,35 @@ class _EventCard extends StatelessWidget {
                 text:
                     'Register by ${formatDisplayDate(event.registrationDueDate)}',
               ),
+              const SizedBox(height: 10),
+              if (event.capacity != null) ...[
+                Text(
+                  'Participants: $registeredCount / ${event.capacity}',
+                  style: const TextStyle(
+                    color: Color(0xFF4A5D72),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ] else ...[
+                Text(
+                  'Participants: $registeredCount',
+                  style: const TextStyle(
+                    color: Color(0xFF4A5D72),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Capacity: Unlimited',
+                  style: const TextStyle(
+                    color: Color(0xFF4A5D72),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -640,115 +683,253 @@ class _EventDetailsSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            if (!isAdmin) ...[
-              StreamBuilder<EventParticipation?>(
-                stream: participationService.watchParticipation(event.id, userId),
-                builder: (context, snapshot) {
-                  final participation = snapshot.data;
-                  if (participation == null) {
-                    final isDeadlinePassed = DateTime.now().isAfter(event.registrationDueDate);
-                    final isOpen = event.status == 'open' && !isDeadlinePassed;
+            StreamBuilder<List<EventParticipation>>(
+              stream: participationService.watchEventParticipations(event.id),
+              builder: (context, participantsSnapshot) {
+                final participants = participantsSnapshot.data ?? const [];
+                final pendingCount = participants.where((p) => p.status == 'pending').length;
+                final confirmedCount = participants.where((p) => p.status == 'confirmed').length;
+                final attendedCount = participants.where((p) => p.status == 'attended').length;
+                final registeredCount = participants.length;
+                final hasLimitedCapacity = event.capacity != null && event.capacity! > 0;
+                final capacityLabel = event.capacity?.toString() ?? 'Unlimited';
+                final occupancyRate = hasLimitedCapacity
+                    ? ((registeredCount / event.capacity!) * 100).clamp(0, 100).round()
+                    : 0;
+                final attendanceRate = confirmedCount > 0
+                    ? ((attendedCount / confirmedCount) * 100).round()
+                    : 0;
+                final isDeadlinePassed = DateTime.now().isAfter(event.registrationDueDate);
+                final isOpen = event.status == 'open' && !isDeadlinePassed;
+                final isFull = hasLimitedCapacity && confirmedCount >= event.capacity!;
+                final canRegister = isOpen && !isFull;
+                final registerButtonLabel = isFull
+                    ? 'EVENT FULL'
+                    : isDeadlinePassed
+                        ? 'REGISTRATION CLOSED (DEADLINE PASSED)'
+                        : isOpen
+                            ? 'REGISTER FOR EVENT'
+                            : 'REGISTRATION CLOSED';
 
-                    return SizedBox(
-                      height: 50,
-                      child: FilledButton.icon(
-                        onPressed: isOpen ? onRegister : null,
-                        icon: const Icon(Icons.assignment_outlined),
-                        label: Text(isDeadlinePassed
-                            ? 'REGISTRATION CLOSED (DEADLINE PASSED)'
-                            : isOpen
-                                ? 'REGISTER FOR EVENT'
-                                : 'REGISTRATION CLOSED'),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7F9FB),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFECEEF0)),
                       ),
-                    );
-                  }
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            hasLimitedCapacity
+                                ? 'Registered: $registeredCount / ${event.capacity}'
+                                : 'Registered: $registeredCount',
+                            style: const TextStyle(
+                              color: Color(0xFF001E40),
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Capacity: $capacityLabel',
+                            style: const TextStyle(
+                              color: Color(0xFF4A5D72),
+                              fontSize: 13,
+                            ),
+                          ),
+                          if (hasLimitedCapacity) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              'Occupancy Rate: $occupancyRate%',
+                              style: const TextStyle(
+                                color: Color(0xFF4A5D72),
+                                fontSize: 13,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            LinearProgressIndicator(
+                              value: occupancyRate / 100.0,
+                              color: const Color(0xFF003366),
+                              backgroundColor: const Color(0xFFECEEF0),
+                              minHeight: 8,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    if (isAdmin) ...[
+                      const SizedBox(height: 18),
                       Container(
+                        width: double.infinity,
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF0F4F8),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFFD0D8E1)),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFECEEF0)),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color.fromRGBO(0, 30, 64, 0.05),
+                              blurRadius: 10,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
                         ),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Row(
-                              children: [
-                                const Text(
-                                  'YOUR PARTICIPATION',
-                                  style: TextStyle(
-                                    color: Color(0xFF001E40),
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                                const Spacer(),
-                                _Pill(
-                                  text: participation.status.toUpperCase(),
-                                  background: _getStatusBgColor(participation.status),
-                                  color: _getStatusTextColor(participation.status),
-                                ),
-                              ],
+                            const Text(
+                              'Event Analytics',
+                              style: TextStyle(
+                                color: Color(0xFF001E40),
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                              ),
                             ),
-                            const Divider(height: 24, color: Color(0xFFD0D8E1)),
-                            _DetailRow(label: 'Full Name', value: participation.fullName),
+                            const SizedBox(height: 12),
+                            _DetailRow(label: 'Capacity', value: capacityLabel),
                             const SizedBox(height: 8),
-                            _DetailRow(label: 'Faculty', value: participation.faculty),
+                            _DetailRow(label: 'Registered', value: registeredCount.toString()),
                             const SizedBox(height: 8),
-                            _DetailRow(label: 'Matric No.', value: participation.matricNumber),
+                            _DetailRow(label: 'Pending', value: pendingCount.toString()),
                             const SizedBox(height: 8),
-                            _DetailRow(label: 'College', value: participation.college),
+                            _DetailRow(label: 'Confirmed', value: confirmedCount.toString()),
+                            const SizedBox(height: 8),
+                            _DetailRow(label: 'Attended', value: attendedCount.toString()),
+                            if (hasLimitedCapacity) ...[
+                              const SizedBox(height: 16),
+                              _DetailRow(label: 'Occupancy Rate', value: '$occupancyRate%'),
+                              const SizedBox(height: 8),
+                              LinearProgressIndicator(
+                                value: occupancyRate / 100.0,
+                                color: const Color(0xFF003366),
+                                backgroundColor: const Color(0xFFECEEF0),
+                                minHeight: 8,
+                              ),
+                            ],
+                            const SizedBox(height: 16),
+                            _DetailRow(label: 'Attendance Rate', value: '$attendanceRate%'),
+                            const SizedBox(height: 8),
+                            LinearProgressIndicator(
+                              value: attendanceRate / 100.0,
+                              color: const Color(0xFF0F8554),
+                              backgroundColor: const Color(0xFFECEEF0),
+                              minHeight: 8,
+                            ),
                           ],
                         ),
                       ),
-                      if (participation.status == 'confirmed') ...[
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          height: 50,
-                          child: FilledButton.icon(
-                            onPressed: () => _markAsAttended(context, participation.id),
-                            icon: const Icon(Icons.assignment_turned_in_outlined),
-                            label: const Text('MARK AS ATTENDED'),
-                          ),
-                        ),
-                      ] else if (participation.status == 'attended') ...[
-                        const SizedBox(height: 16),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFD4EDDA),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: const Text(
-                            'Thank you! Your attendance has been recorded.',
-                            style: TextStyle(
-                              color: Color(0xFF155724),
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ],
                     ],
-                  );
-                },
-              ),
-            ] else ...[
-              SizedBox(
-                height: 50,
-                child: FilledButton.icon(
-                  onPressed: onViewParticipants,
-                  icon: const Icon(Icons.people_outline),
-                  label: const Text('VIEW PARTICIPANTS'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF003366),
-                  ),
-                ),
-              ),
-            ],
+                    const SizedBox(height: 24),
+                    if (!isAdmin) ...[
+                      StreamBuilder<EventParticipation?>(
+                        stream: participationService.watchParticipation(event.id, userId),
+                        builder: (context, snapshot) {
+                          final participation = snapshot.data;
+                          if (participation == null) {
+                            return SizedBox(
+                              height: 50,
+                              child: FilledButton.icon(
+                                onPressed: canRegister ? onRegister : null,
+                                icon: const Icon(Icons.assignment_outlined),
+                                label: Text(registerButtonLabel),
+                              ),
+                            );
+                          }
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF0F4F8),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(color: const Color(0xFFD0D8E1)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Text(
+                                          'YOUR PARTICIPATION',
+                                          style: TextStyle(
+                                            color: Color(0xFF001E40),
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                        const Spacer(),
+                                        _Pill(
+                                          text: participation.status.toUpperCase(),
+                                          background: _getStatusBgColor(participation.status),
+                                          color: _getStatusTextColor(participation.status),
+                                        ),
+                                      ],
+                                    ),
+                                    const Divider(height: 24, color: Color(0xFFD0D8E1)),
+                                    _DetailRow(label: 'Full Name', value: participation.fullName),
+                                    const SizedBox(height: 8),
+                                    _DetailRow(label: 'Faculty', value: participation.faculty),
+                                    const SizedBox(height: 8),
+                                    _DetailRow(label: 'Matric No.', value: participation.matricNumber),
+                                    const SizedBox(height: 8),
+                                    _DetailRow(label: 'College', value: participation.college),
+                                  ],
+                                ),
+                              ),
+                              if (participation.status == 'confirmed') ...[
+                                const SizedBox(height: 16),
+                                SizedBox(
+                                  height: 50,
+                                  child: FilledButton.icon(
+                                    onPressed: () => _markAsAttended(context, participation.id),
+                                    icon: const Icon(Icons.assignment_turned_in_outlined),
+                                    label: const Text('MARK AS ATTENDED'),
+                                  ),
+                                ),
+                              ] else if (participation.status == 'attended') ...[
+                                const SizedBox(height: 16),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFD4EDDA),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: const Text(
+                                    'Thank you! Your attendance has been recorded.',
+                                    style: TextStyle(
+                                      color: Color(0xFF155724),
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          );
+                        },
+                      ),
+                    ] else ...[
+                      SizedBox(
+                        height: 50,
+                        child: FilledButton.icon(
+                          onPressed: onViewParticipants,
+                          icon: const Icon(Icons.people_outline),
+                          label: const Text('VIEW PARTICIPANTS'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFF003366),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -779,11 +960,13 @@ class _EventEditorScreenState extends State<EventEditorScreen> {
   late final TextEditingController _descriptionController;
   late final TextEditingController _timeController;
   late final TextEditingController _venueController;
+  late final TextEditingController _capacityController;
   late DateTime _date;
   late DateTime _registrationDueDate;
   late String _category;
   late String _status;
   bool _isSaving = false;
+  bool _unlimitedParticipants = false;
 
   @override
   void initState() {
@@ -796,6 +979,8 @@ class _EventEditorScreenState extends State<EventEditorScreen> {
     );
     _timeController = TextEditingController(text: event?.time ?? '');
     _venueController = TextEditingController(text: event?.venue ?? '');
+    _capacityController = TextEditingController(text: event?.capacity?.toString() ?? '50');
+    _unlimitedParticipants = event?.capacity == null;
     _date = event?.date ?? DateTime.now();
     _registrationDueDate = event?.registrationDueDate ?? DateTime.now();
     _category = event?.category ?? 'academic';
@@ -809,6 +994,7 @@ class _EventEditorScreenState extends State<EventEditorScreen> {
     _descriptionController.dispose();
     _timeController.dispose();
     _venueController.dispose();
+    _capacityController.dispose();
     super.dispose();
   }
 
@@ -855,6 +1041,7 @@ class _EventEditorScreenState extends State<EventEditorScreen> {
       venue: _venueController.text.trim(),
       category: _category,
       status: _status,
+      capacity: _unlimitedParticipants ? null : int.parse(_capacityController.text.trim()),
       registrationDueDate: _registrationDueDate,
       createdBy: widget.event?.createdBy ?? widget.createdBy,
       createdAt: widget.event?.createdAt,
@@ -978,6 +1165,37 @@ class _EventEditorScreenState extends State<EventEditorScreen> {
                   },
                 ),
                 const SizedBox(height: 14),
+                CheckboxListTile(
+                  value: _unlimitedParticipants,
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() => _unlimitedParticipants = value);
+                  },
+                  title: const Text('Unlimited Participants'),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                ),
+                if (!_unlimitedParticipants) ...[
+                  const SizedBox(height: 14),
+                  _EditorField(
+                    controller: _capacityController,
+                    label: 'Maximum Participants',
+                    hint: '50',
+                    keyboardType: TextInputType.number,
+                    enabled: !_unlimitedParticipants,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Maximum Participants is required.';
+                      }
+                      final capacity = int.tryParse(value.trim());
+                      if (capacity == null || capacity < 1) {
+                        return 'Enter a valid number (minimum 1).';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+                const SizedBox(height: 14),
                 DropdownButtonFormField<String>(
                   initialValue: _status,
                   decoration: _formDecoration('Status'),
@@ -1043,6 +1261,9 @@ class _EditorField extends StatelessWidget {
     required this.hint,
     this.isRequired = true,
     this.maxLines = 1,
+    this.keyboardType,
+    this.validator,
+    this.enabled = true,
   });
 
   final TextEditingController controller;
@@ -1050,14 +1271,19 @@ class _EditorField extends StatelessWidget {
   final String hint;
   final bool isRequired;
   final int maxLines;
+  final TextInputType? keyboardType;
+  final String? Function(String?)? validator;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
+      keyboardType: keyboardType,
+      enabled: enabled,
       decoration: _formDecoration(label).copyWith(hintText: hint),
-      validator: (value) {
+      validator: validator ?? (value) {
         if (isRequired && (value == null || value.trim().isEmpty)) {
           return '$label is required.';
         }
