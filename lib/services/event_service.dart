@@ -1,14 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/event_item.dart';
+import 'notification_service.dart';
 
 enum EventSort { upcoming, newest, oldest }
 
 class EventService {
   EventService({FirebaseFirestore? firestore})
-    : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance,
+      _notificationService = NotificationService(firestore: firestore);
 
   final FirebaseFirestore _firestore;
+  final NotificationService _notificationService;
 
   CollectionReference<Map<String, dynamic>> get _events =>
       _firestore.collection('events');
@@ -51,10 +55,19 @@ class EventService {
   Future<void> saveEvent(EventItem event, {required String createdBy}) async {
     final data = event.toFirestore(createdBy: createdBy);
     if (event.id.isEmpty) {
-      await _events.add(<String, Object?>{
+      final ref = await _events.add(<String, Object?>{
         ...data,
         'createdAt': FieldValue.serverTimestamp(),
       });
+
+      try {
+        await _notificationService.publishEventNotification(
+          eventId: ref.id,
+          event: event,
+        );
+      } catch (error) {
+        debugPrint('Unable to publish event notification: $error');
+      }
       return;
     }
 

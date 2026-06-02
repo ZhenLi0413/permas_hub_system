@@ -1,10 +1,14 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'announcement_screen.dart';
 import 'event_screen.dart';
 import 'feedback_screen.dart';
 import 'models/app_user_profile.dart';
+import 'models/notification_model.dart';
+import 'notification_popup.dart';
+import 'notification_provider.dart';
 import 'profile_screen.dart';
 import 'services/announcement_service.dart';
 import 'services/event_service.dart';
@@ -21,6 +25,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedTab = 0;
   bool _isRefreshingEmail = false;
   bool _isSendingVerification = false;
+  late final NotificationProvider _notificationProvider;
+  OverlayEntry? _notificationOverlayEntry;
+  final List<NotificationModel> _queuedNotifications = <NotificationModel>[];
 
   final _profileService = UserProfileService();
   final _eventService = EventService();
@@ -34,7 +41,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    _notificationProvider = NotificationProvider();
+    _notificationProvider.addListener(_handleNotificationUpdate);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = FirebaseAuth.instance.currentUser;
+      if (mounted && user != null) {
+        _notificationProvider.startListening(user.uid);
+      }
+    });
     _ensureStarterContent();
+  }
+
+  @override
+  void dispose() {
+    _notificationProvider.removeListener(_handleNotificationUpdate);
+    _notificationProvider.dispose();
+    _removeNotificationPopup();
+    super.dispose();
   }
 
   Future<void> _ensureStarterContent() async {
@@ -58,6 +81,83 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Navigator.of(
       context,
     ).push(MaterialPageRoute<void>(builder: (_) => const ProfileScreen()));
+  }
+
+  void _openNotificationDetails(NotificationModel notification) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            NotificationAnnouncementDetailScreen(notification: notification),
+      ),
+    );
+  }
+
+  void _handleNotificationUpdate() {
+    final notification = _notificationProvider.consumePendingPopup();
+    if (notification == null) {
+      return;
+    }
+
+    if (_notificationOverlayEntry != null) {
+      _queuedNotifications.add(notification);
+      return;
+    }
+
+    _showNotificationPopup(notification);
+  }
+
+  void _showNotificationPopup(NotificationModel notification) {
+    final overlay = Overlay.of(context, rootOverlay: true);
+
+    late OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: 0,
+        left: 0,
+        right: 0,
+        child: NotificationPopup(
+          notification: notification,
+          onViewEvent: () {
+            _removeNotificationPopup(entry);
+            _notificationProvider.markAsRead(notification.id);
+            _openNotificationDetails(notification);
+            _showNextQueuedNotification();
+          },
+          onDismiss: () {
+            _removeNotificationPopup(entry);
+            _showNextQueuedNotification();
+          },
+        ),
+      ),
+    );
+
+    _notificationOverlayEntry = entry;
+    overlay.insert(entry);
+  }
+
+  void _removeNotificationPopup([OverlayEntry? entry]) {
+    final target = entry ?? _notificationOverlayEntry;
+    if (target == null) {
+      return;
+    }
+
+    target.remove();
+    if (_notificationOverlayEntry == target) {
+      _notificationOverlayEntry = null;
+    }
+  }
+
+  void _showNextQueuedNotification() {
+    if (_queuedNotifications.isEmpty) {
+      return;
+    }
+
+    final next = _queuedNotifications.removeAt(0);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _showNotificationPopup(next);
+      }
+    });
   }
 
   Future<void> _resendVerificationEmail() async {
@@ -401,118 +501,121 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    return StreamBuilder<AppUserProfile?>(
-      stream: _profileService.watchProfile(user.uid),
-      builder: (context, snapshot) {
-        final profile = snapshot.data;
+    return ChangeNotifierProvider.value(
+      value: _notificationProvider,
+      child: StreamBuilder<AppUserProfile?>(
+        stream: _profileService.watchProfile(user.uid),
+        builder: (context, snapshot) {
+          final profile = snapshot.data;
 
-        return Scaffold(
-          backgroundColor: pageBackground,
-          body: Stack(
-            children: [
-              Positioned.fill(
-                child: Opacity(
-                  opacity: 0.08,
-                  child: Image.asset(
-                    'assets/mountkinabalu.jpg',
-                    fit: BoxFit.cover,
+          return Scaffold(
+            backgroundColor: pageBackground,
+            body: Stack(
+              children: [
+                Positioned.fill(
+                  child: Opacity(
+                    opacity: 0.08,
+                    child: Image.asset(
+                      'assets/mountkinabalu.jpg',
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
-              ),
-              SafeArea(
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 18,
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Image.asset(
-                            'assets/permas_logo.png',
-                            width: 30,
-                            height: 30,
-                            fit: BoxFit.contain,
-                          ),
-                          const SizedBox(width: 10),
-                          const Text(
-                            'PERMAS Hub',
-                            style: TextStyle(
-                              color: primary,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w900,
+                SafeArea(
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 18,
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              'assets/permas_logo.png',
+                              width: 30,
+                              height: 30,
+                              fit: BoxFit.contain,
                             ),
-                          ),
-                          if (profile?.isAdmin ?? false) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
+                            const SizedBox(width: 10),
+                            const Text(
+                              'PERMAS Hub',
+                              style: TextStyle(
+                                color: primary,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w900,
                               ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFBAEAFF),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Text(
-                                'ADMIN',
-                                style: TextStyle(
-                                  color: Color(0xFF001E40),
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w900,
+                            ),
+                            if (profile?.isAdmin ?? false) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
                                 ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFBAEAFF),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Text(
+                                  'ADMIN',
+                                  style: TextStyle(
+                                    color: Color(0xFF001E40),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ),
+                            ],
+                            const Spacer(),
+                            IconButton(
+                              tooltip: 'Profile',
+                              onPressed: _openProfilePage,
+                              icon: const CircleAvatar(
+                                backgroundColor: primary,
+                                child: Icon(Icons.person, color: Colors.white),
                               ),
                             ),
                           ],
-                          const Spacer(),
-                          IconButton(
-                            tooltip: 'Profile',
-                            onPressed: _openProfilePage,
-                            icon: const CircleAvatar(
-                              backgroundColor: primary,
-                              child: Icon(Icons.person, color: Colors.white),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                    _verificationBanner(),
-                    Expanded(child: _contentForTab(profile)),
-                  ],
+                      _verificationBanner(),
+                      Expanded(child: _contentForTab(profile)),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-          bottomNavigationBar: BottomNavigationBar(
-            currentIndex: _selectedTab,
-            onTap: (index) => setState(() => _selectedTab = index),
-            selectedItemColor: primary,
-            unselectedItemColor: const Color(0xFF7A8A9C),
-            showUnselectedLabels: true,
-            type: BottomNavigationBarType.fixed,
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.home_filled),
-                label: 'Home',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.calendar_month),
-                label: 'Events',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.campaign),
-                label: 'Announcements',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.support_agent),
-                label: 'Feedback',
-              ),
-            ],
-          ),
-        );
-      },
+              ],
+            ),
+            bottomNavigationBar: BottomNavigationBar(
+              currentIndex: _selectedTab,
+              onTap: (index) => setState(() => _selectedTab = index),
+              selectedItemColor: primary,
+              unselectedItemColor: const Color(0xFF7A8A9C),
+              showUnselectedLabels: true,
+              type: BottomNavigationBarType.fixed,
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.home_filled),
+                  label: 'Home',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.calendar_month),
+                  label: 'Events',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.campaign),
+                  label: 'Announcements',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.support_agent),
+                  label: 'Feedback',
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }
