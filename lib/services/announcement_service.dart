@@ -1,12 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/announcement_item.dart';
+import '../models/event_item.dart';
+import 'notification_service.dart';
 
 class AnnouncementService {
   AnnouncementService({FirebaseFirestore? firestore})
-    : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance,
+      _notificationService = NotificationService(firestore: firestore);
 
   final FirebaseFirestore _firestore;
+  final NotificationService _notificationService;
 
   CollectionReference<Map<String, dynamic>> get _announcements =>
       _firestore.collection('announcements');
@@ -27,10 +31,30 @@ class AnnouncementService {
   }) async {
     final data = announcement.toFirestore(createdBy: createdBy);
     if (announcement.id.isEmpty) {
-      await _announcements.add(<String, Object?>{
+      final announcementRef = await _announcements.add(<String, Object?>{
         ...data,
         'createdAt': FieldValue.serverTimestamp(),
       });
+
+      final notificationEvent = EventItem(
+        id: announcementRef.id,
+        imagePath: announcement.imagePath,
+        title: announcement.title,
+        description: announcement.content,
+        date: announcement.date,
+        time: '',
+        venue: '',
+        category: 'announcement',
+        status: 'published',
+        capacity: null,
+        registrationDueDate: announcement.date,
+        createdBy: createdBy,
+      );
+
+      await _notificationService.publishEventNotification(
+        eventId: announcementRef.id,
+        event: notificationEvent,
+      );
       return;
     }
 

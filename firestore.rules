@@ -43,6 +43,13 @@ service cloud.firestore {
               resource.data.role == 'member' &&
               request.resource.data.role == 'member');
       allow delete: if isAdmin();
+
+      match /notifications/{notificationId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create: if isAdmin();
+        allow update: if isOwner(userId) || isAdmin();
+        allow delete: if isOwner(userId) || isAdmin();
+      }
     }
 
     match /events/{eventId} {
