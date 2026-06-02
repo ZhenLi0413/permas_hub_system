@@ -107,6 +107,7 @@ class _EventsScreenState extends State<EventsScreen> {
                       ? widget.profile!.uid
                       : FirebaseAuth.instance.currentUser?.uid ?? '',
                   participationService: _participationService,
+                  registrationDueDate: event.registrationDueDate,
                 ),
               ),
             );
@@ -1503,11 +1504,13 @@ class EventRegistrationScreen extends StatefulWidget {
     required this.eventId,
     required this.userId,
     required this.participationService,
+    required this.registrationDueDate,
   });
 
   final String eventId;
   final String userId;
   final ParticipationService participationService;
+  final DateTime registrationDueDate;
 
   @override
   State<EventRegistrationScreen> createState() => _EventRegistrationScreenState();
@@ -1531,6 +1534,16 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
   }
 
   Future<void> _submit() async {
+
+    if (DateTime.now().isAfter(widget.registrationDueDate)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Registration deadline has passed.'),
+          ),
+      );
+      return;
+    }
+
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -1569,6 +1582,9 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
   Widget build(BuildContext context) {
     const primary = Color(0xFF003366);
 
+    final isClosed = 
+        DateTime.now().isAfter(widget.registrationDueDate);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9FB),
       appBar: AppBar(
@@ -1594,6 +1610,16 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
+                Text(
+                  'Registration closes on: '
+                  '${widget.registrationDueDate.day}/'
+                  '${widget.registrationDueDate.month}/'
+                  '${widget.registrationDueDate.year}',
+                  style: const TextStyle(
+                    color: Color(0xFFFF0000),
+                    fontWeight: FontWeight.w700
+                  ),
+                ),
                 const Text(
                   'Please fill in your correct information to participate in this club activity.',
                   style: TextStyle(
@@ -1629,7 +1655,7 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                 SizedBox(
                   height: 50,
                   child: FilledButton(
-                    onPressed: _isSubmitting ? null : _submit,
+                    onPressed: (_isSubmitting || isClosed) ? null : _submit,
                     child: _isSubmitting
                         ? const SizedBox(
                             width: 18,
@@ -1639,7 +1665,11 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                               color: Colors.white,
                             ),
                           )
-                        : const Text('SUBMIT REGISTRATION'),
+                        : Text(
+                          isClosed
+                          ? 'REGISTRATION CLOSED'
+                          : 'SUBMIT REGISTRATION'
+                          ),
                   ),
                 ),
               ],
