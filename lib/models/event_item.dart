@@ -11,6 +11,7 @@ class EventItem {
     required this.venue,
     required this.category,
     required this.status,
+    this.capacity,
     required this.registrationDueDate,
     required this.createdBy,
     this.createdAt,
@@ -26,6 +27,7 @@ class EventItem {
   final String venue;
   final String category;
   final String status;
+  final int? capacity;
   final DateTime registrationDueDate;
   final String createdBy;
   final DateTime? createdAt;
@@ -55,6 +57,7 @@ class EventItem {
       category:
           data['category'] as String? ?? data['type'] as String? ?? 'academic',
       status: data['status'] as String? ?? 'open',
+      capacity: _readNullableInt(data['capacity']),
       registrationDueDate:
           _readDate(data['registrationDueDate']) ??
           _readDate(data['date']) ??
@@ -83,6 +86,7 @@ class EventItem {
         ),
       ),
       'createdBy': createdBy,
+      'capacity': capacity,
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }
@@ -104,6 +108,19 @@ class EventItem {
     }
     if (value is String) {
       return DateTime.tryParse(value);
+    }
+    return null;
+  }
+
+  static int? _readNullableInt(Object? value) {
+    if (value is int) {
+      return value;
+    }
+    if (value is double) {
+      return value.toInt();
+    }
+    if (value is String) {
+      return int.tryParse(value);
     }
     return null;
   }

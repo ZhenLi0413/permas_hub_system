@@ -40,6 +40,13 @@ class ParticipationService {
     });
   }
 
+  // Stream of all participations in the system, used to compute event counts once.
+  Stream<List<EventParticipation>> watchAllParticipations() {
+    return _participations.snapshots().map((snapshot) {
+      return snapshot.docs.map(EventParticipation.fromSnapshot).toList();
+    });
+  }
+
   // Register for an event
   Future<void> register({
     required String eventId,
