@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'announcement_screen.dart';
 import 'event_screen.dart';
+import 'feedback_screen.dart';
 import 'models/app_user_profile.dart';
 import 'profile_screen.dart';
 import 'services/announcement_service.dart';
@@ -301,35 +302,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _feedbackContent() {
-    return const Center(
-      child: Padding(
-        padding: EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.support_agent, size: 68, color: primary),
-            SizedBox(height: 18),
-            Text(
-              'Feedback',
-              style: TextStyle(
-                color: primary,
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Feedback workflows can be connected in a later sprint.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: textSecondary, fontSize: 14),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _contentForTab(AppUserProfile? profile) {
     switch (_selectedTab) {
       case 1:
@@ -340,7 +312,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           service: _announcementService,
         );
       case 3:
-        return _feedbackContent();
+        return FeedbackScreen(profile: profile);
       case 0:
       default:
         return _dashboardContent(profile);
