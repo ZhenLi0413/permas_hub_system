@@ -55,6 +55,17 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    match /feedbacks/{feedbackId} {
+      // Any signed-in user can submit their own feedback
+      allow create: if signedIn() &&
+          request.resource.data.userId == request.auth.uid;
+      // Owner can read their own; admin can read all
+      allow read: if isAdmin() ||
+          (signedIn() && resource.data.userId == request.auth.uid);
+      // Only admin can update (replies, status) or delete
+      allow update, delete: if isAdmin();
+    }
+
     match /participations/{participationId} {
       allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
       allow read: if signedIn() && (resource == null || resource.data.userId == request.auth.uid || canManageEvents());
