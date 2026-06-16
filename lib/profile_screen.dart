@@ -2,6 +2,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'models/app_user_profile.dart';
+import 'models/event_item.dart';
+import 'models/event_participation.dart';
+import 'services/event_service.dart';
+import 'services/participation_service.dart';
 import 'services/user_profile_service.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -136,6 +140,284 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  void _showEventsParticipated(BuildContext context, String userId) {
+    final participationService = ParticipationService();
+    final eventService = EventService();
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return StreamBuilder<List<EventItem>>(
+          stream: eventService.watchEvents(),
+          builder: (context, eventSnapshot) {
+            final events = eventSnapshot.data ?? [];
+            final eventMap = {for (final e in events) e.id: e};
+
+            return StreamBuilder<List<EventParticipation>>(
+              stream: participationService.watchUserParticipations(userId),
+              builder: (context, partSnapshot) {
+                if (partSnapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox(
+                    height: 200,
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                final participations = partSnapshot.data ?? [];
+                if (participations.isEmpty) {
+                  return Container(
+                    padding: const EdgeInsets.all(24),
+                    child: const Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.event_note, size: 48, color: textSecondary),
+                        SizedBox(height: 12),
+                        Text(
+                          'No Participated Events',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: primary,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'You have not registered for any events yet.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: textSecondary),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Text(
+                          'PARTICIPATED EVENTS',
+                          style: TextStyle(
+                            color: primary,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxHeight: MediaQuery.of(context).size.height * 0.4,
+                          ),
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            itemCount: participations.length,
+                            separatorBuilder: (_, __) => const Divider(),
+                            itemBuilder: (context, index) {
+                              final part = participations[index];
+                              final event = eventMap[part.eventId];
+                              final title = event?.title ?? 'Unknown Event';
+                              final dateStr = event != null
+                                  ? '${event.date.day}/${event.date.month}/${event.date.year}'
+                                  : 'N/A';
+
+                              return ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                title: Text(
+                                  title,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: primary,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  'Date: $dateStr',
+                                  style: const TextStyle(color: textSecondary),
+                                ),
+                                trailing: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _getStatusBgColor(part.status),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    part.status.toUpperCase(),
+                                    style: TextStyle(
+                                      color: _getStatusTextColor(part.status),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showEditProfileDialog(BuildContext context, String uid, AppUserProfile? profile) {
+    final profileService = UserProfileService();
+    final nameController = TextEditingController(text: profile?.name);
+    final matricController = TextEditingController(text: profile?.matricNo ?? '');
+    final facultyController = TextEditingController(text: profile?.faculty ?? '');
+    final yearController = TextEditingController(text: profile?.yearOfStudy ?? '');
+
+    final formKey = GlobalKey<FormState>();
+
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit Profile Details'),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Name',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Name is required.';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: matricController,
+                    decoration: const InputDecoration(
+                      labelText: 'Matric No',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Matric number is required.';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: facultyController,
+                    decoration: const InputDecoration(
+                      labelText: 'Faculty',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Faculty is required.';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: yearController,
+                    decoration: const InputDecoration(
+                      labelText: 'Year of Study',
+                      border: OutlineInputBorder(),
+                      hintText: 'e.g. Year 3',
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Year of study is required.';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                if (!formKey.currentState!.validate()) {
+                  return;
+                }
+                Navigator.of(context).pop();
+                try {
+                  await profileService.updateProfileDetails(
+                    uid: uid,
+                    name: nameController.text,
+                    matricNo: matricController.text,
+                    faculty: facultyController.text,
+                    yearOfStudy: yearController.text,
+                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Profile updated successfully.')),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to update profile: $e')),
+                    );
+                  }
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Color _getStatusBgColor(String status) {
+    switch (status) {
+      case 'attended':
+        return const Color(0xFFD2F6DC);
+      case 'confirmed':
+        return const Color(0xFFE3F2FD);
+      case 'pending':
+      default:
+        return const Color(0xFFFFE9B7);
+    }
+  }
+
+  Color _getStatusTextColor(String status) {
+    switch (status) {
+      case 'attended':
+        return const Color(0xFF1B5E20);
+      case 'confirmed':
+        return const Color(0xFF0D47A1);
+      case 'pending':
+      default:
+        return const Color(0xFFE65100);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
@@ -259,6 +541,12 @@ class ProfileScreen extends StatelessWidget {
                           children: [
                             _ProfileInfoRow(label: 'Name', value: name),
                             const SizedBox(height: 18),
+                            _ProfileInfoRow(label: 'Matric No', value: profile?.matricNo ?? 'Not set'),
+                            const SizedBox(height: 18),
+                            _ProfileInfoRow(label: 'Faculty', value: profile?.faculty ?? 'Not set'),
+                            const SizedBox(height: 18),
+                            _ProfileInfoRow(label: 'Year of Study', value: profile?.yearOfStudy ?? 'Not set'),
+                            const SizedBox(height: 18),
                             _ProfileInfoRow(label: 'Email', value: email),
                             const SizedBox(height: 18),
                             _ProfileInfoRow(
@@ -281,6 +569,49 @@ class ProfileScreen extends StatelessWidget {
                             ),
                           ],
                         ),
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: FilledButton.icon(
+                              onPressed: () => _showEventsParticipated(context, user.uid),
+                              icon: const Icon(Icons.event_available),
+                              label: const Text(
+                                'Event Participated',
+                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                              ),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: const Color(0xFFECEEF0),
+                                foregroundColor: primary,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  side: const BorderSide(color: Color(0xFFD0D8E1)),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: FilledButton.icon(
+                              onPressed: () => _showEditProfileDialog(context, user.uid, profile),
+                              icon: const Icon(Icons.edit),
+                              label: const Text(
+                                'Edit Profile',
+                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                              ),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: primary,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 28),
                       FilledButton.icon(

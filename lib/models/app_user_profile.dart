@@ -8,6 +8,9 @@ class AppUserProfile {
     required this.role,
     required this.acceptedTerms,
     this.photoUrl,
+    this.matricNo,
+    this.faculty,
+    this.yearOfStudy,
     this.acceptedTermsAt,
     this.createdAt,
     this.updatedAt,
@@ -19,6 +22,9 @@ class AppUserProfile {
   final String role;
   final bool acceptedTerms;
   final String? photoUrl;
+  final String? matricNo;
+  final String? faculty;
+  final String? yearOfStudy;
   final DateTime? acceptedTermsAt;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -44,6 +50,9 @@ class AppUserProfile {
       role: _normalizeRole(data['role'] as String?),
       acceptedTerms: data['acceptedTerms'] as bool? ?? false,
       photoUrl: data['photoUrl'] as String?,
+      matricNo: data['matricNo'] as String?,
+      faculty: data['faculty'] as String?,
+      yearOfStudy: data['yearOfStudy'] as String?,
       acceptedTermsAt: _readDate(data['acceptedTermsAt']),
       createdAt: _readDate(data['createdAt']),
       updatedAt: _readDate(data['updatedAt']),
