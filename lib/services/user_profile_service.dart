@@ -97,6 +97,22 @@ class UserProfileService {
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
+
+  Future<void> updateProfileDetails({
+    required String uid,
+    required String name,
+    required String matricNo,
+    required String faculty,
+    required String yearOfStudy,
+  }) async {
+    await _users.doc(uid).update(<String, Object?>{
+      'name': name.trim(),
+      'matricNo': matricNo.trim(),
+      'faculty': faculty.trim(),
+      'yearOfStudy': yearOfStudy.trim(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
 }
 
 

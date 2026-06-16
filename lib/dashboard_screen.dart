@@ -23,7 +23,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  int _selectedTab = 1;
+  int _selectedTab = 0;
   bool _isRefreshingEmail = false;
   bool _isSendingVerification = false;
   late final NotificationProvider _notificationProvider;
@@ -330,28 +330,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title: 'Events',
                 subtitle: 'Browse academic, social, and career activities.',
                 background: const Color(0xFFF9E8B8),
-                onTap: () => setState(() => _selectedTab = 2),
+                onTap: () => setState(() => _selectedTab = 1),
               ),
               _buildFeatureCard(
                 icon: Icons.campaign,
                 title: 'Announcements',
                 subtitle: 'Read official updates and urgent notices.',
                 background: const Color(0xFFDDF5FF),
-                onTap: () => setState(() => _selectedTab = 3),
+                onTap: () => setState(() => _selectedTab = 2),
               ),
               _buildFeatureCard(
                 icon: Icons.person_outline,
                 title: 'Profile',
                 subtitle: 'Review your PERMAS account information.',
                 background: const Color(0xFFEDE9FF),
-                onTap: () => setState(() => _selectedTab = 0),
+                onTap: () => setState(() => _selectedTab = 4),
               ),
               _buildFeatureCard(
                 icon: Icons.support_agent,
                 title: 'Feedback',
                 subtitle: 'Send ideas, questions, or support requests.',
                 background: const Color(0xFFF7E7E5),
-                onTap: () => setState(() => _selectedTab = 4),
+                onTap: () => setState(() => _selectedTab = 3),
               ),
             ],
           ),
@@ -417,7 +417,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           color: textSecondary,
                         ),
                         onTap: () {
-                          setState(() => _selectedTab = 2); // Switch to Events tab
+                          setState(() => _selectedTab = 1); // Switch to Events tab
                         },
                       ),
                     );
@@ -452,14 +452,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   subtitle:
                       'Title, description, date, time, venue, category, status, registration due date, optional image.',
                   icon: Icons.event_available,
-                  onTap: () => setState(() => _selectedTab = 2),
+                  onTap: () => setState(() => _selectedTab = 1),
                 ),
                 const SizedBox(height: 16),
                 _RecentActivityItem(
                   title: 'Firestore Announcements Service',
                   subtitle: 'General and urgent announcements with admin CRUD.',
                   icon: Icons.campaign_outlined,
-                  onTap: () => setState(() => _selectedTab = 3),
+                  onTap: () => setState(() => _selectedTab = 2),
                 ),
               ],
             ),
@@ -478,18 +478,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _contentForTab(AppUserProfile? profile) {
     switch (_selectedTab) {
-      case 0:
-        return const ProfileScreen();
-      case 2:
+      case 1:
         return EventsScreen(profile: profile, service: _eventService);
-      case 3:
+      case 2:
         return AnnouncementsScreen(
           profile: profile,
           service: _announcementService,
         );
-      case 4:
+      case 3:
         return FeedbackScreen(profile: profile);
-      case 1:
+      case 4:
+        return const ProfileScreen();
+      case 0:
       default:
         return _dashboardContent(profile);
     }
@@ -664,10 +664,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               type: BottomNavigationBarType.fixed,
               items: const [
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.person),
-                  label: 'Profile',
-                ),
-                BottomNavigationBarItem(
                   icon: Icon(Icons.home_filled),
                   label: 'Home',
                 ),
@@ -682,6 +678,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 BottomNavigationBarItem(
                   icon: Icon(Icons.support_agent),
                   label: 'Feedback',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.person),
+                  label: 'Profile',
                 ),
               ],
             ),
