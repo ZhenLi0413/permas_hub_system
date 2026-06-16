@@ -138,7 +138,7 @@ class _AdminFeedbackScreenState extends State<AdminFeedbackScreen> {
           return Scaffold(
             backgroundColor: const Color(0xFFF7F9FB),
             appBar: AppBar(
-              title: const Text('Event Feedback'),
+              title: const Text('EVENT FEEDBACK'),
               foregroundColor: primary,
               backgroundColor: Colors.transparent,
               elevation: 0,

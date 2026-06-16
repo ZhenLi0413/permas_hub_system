@@ -90,6 +90,13 @@ class UserProfileService {
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
+
+  Future<void> updatePhotoUrl(String uid, String photoUrl) async {
+    await _users.doc(uid).update(<String, Object?>{
+      'photoUrl': photoUrl,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
 }
 
 

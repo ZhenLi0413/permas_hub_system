@@ -262,44 +262,34 @@ class _EventsHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Events',
-                    style: TextStyle(
-                      color: Color(0xFF001E40),
-                      fontSize: 42,
-                      fontWeight: FontWeight.w900,
-                      height: 1,
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    'Discover, participate, and lead within the university community.',
-                    style: TextStyle(
-                      color: Color(0xFF4A5D72),
-                      fontSize: 14,
-                      height: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (isAdmin) ...[
-              const SizedBox(width: 12),
-              IconButton.filled(
-                tooltip: 'Add event',
-                onPressed: onAdd,
-                icon: const Icon(Icons.add),
-              ),
-            ],
-          ],
+        const Text(
+          'EVENTS',
+          style: TextStyle(
+            color: Color(0xFF001E40),
+            fontSize: 42,
+            fontWeight: FontWeight.w900,
+            height: 1,
+          ),
         ),
+        const SizedBox(height: 10),
+        const Text(
+          'Discover, participate, and lead within the university community.',
+          style: TextStyle(
+            color: Color(0xFF4A5D72),
+            fontSize: 14,
+            height: 1.5,
+          ),
+        ),
+        if (isAdmin) ...[
+          const SizedBox(height: 14),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: FilledButton(
+              onPressed: onAdd,
+              child: const Text('+ ADD NEW'),
+            ),
+          ),
+        ],
         const SizedBox(height: 24),
         Wrap(
           spacing: 8,

@@ -172,40 +172,35 @@ class _AnnouncementsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Announcements',
-                style: TextStyle(
-                  color: Color(0xFF001E40),
-                  fontSize: 38,
-                  fontWeight: FontWeight.w900,
-                  height: 1,
-                ),
-              ),
-              SizedBox(height: 10),
-              Text(
-                'The latest updates, official news, and essential briefings from PERMAS.',
-                style: TextStyle(
-                  color: Color(0xFF4A5D72),
-                  fontSize: 14,
-                  height: 1.5,
-                ),
-              ),
-            ],
+        const Text(
+          'ANNOUNCEMENTS',
+          style: TextStyle(
+            color: Color(0xFF001E40),
+            fontSize: 38,
+            fontWeight: FontWeight.w900,
+            height: 1,
+          ),
+        ),
+        const SizedBox(height: 10),
+        const Text(
+          'The latest updates, official news, and essential briefings from PERMAS.',
+          style: TextStyle(
+            color: Color(0xFF4A5D72),
+            fontSize: 14,
+            height: 1.5,
           ),
         ),
         if (isAdmin) ...[
-          const SizedBox(width: 12),
-          IconButton.filled(
-            tooltip: 'Add announcement',
-            onPressed: onAdd,
-            icon: const Icon(Icons.add),
+          const SizedBox(height: 14),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: FilledButton(
+              onPressed: onAdd,
+              child: const Text('+ ADD NEW'),
+            ),
           ),
         ],
       ],

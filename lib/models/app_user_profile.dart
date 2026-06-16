@@ -7,6 +7,7 @@ class AppUserProfile {
     required this.email,
     required this.role,
     required this.acceptedTerms,
+    this.photoUrl,
     this.acceptedTermsAt,
     this.createdAt,
     this.updatedAt,
@@ -17,6 +18,7 @@ class AppUserProfile {
   final String email;
   final String role;
   final bool acceptedTerms;
+  final String? photoUrl;
   final DateTime? acceptedTermsAt;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -41,6 +43,7 @@ class AppUserProfile {
       email: data['email'] as String? ?? '',
       role: _normalizeRole(data['role'] as String?),
       acceptedTerms: data['acceptedTerms'] as bool? ?? false,
+      photoUrl: data['photoUrl'] as String?,
       acceptedTermsAt: _readDate(data['acceptedTermsAt']),
       createdAt: _readDate(data['createdAt']),
       updatedAt: _readDate(data['updatedAt']),

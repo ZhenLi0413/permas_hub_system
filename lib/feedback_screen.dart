@@ -119,7 +119,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const Text(
-                      'Feedback',
+                      'FEEDBACK',
                       style: TextStyle(
                         color: primary,
                         fontSize: 24,

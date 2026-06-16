@@ -12,8 +12,128 @@ class ProfileScreen extends StatelessWidget {
 
   Future<void> _logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
-    if (!context.mounted) return;
-    Navigator.of(context).popUntil((route) => route.isFirst);
+  }
+
+  void _showAvatarPicker(BuildContext context, String uid, String? currentPhotoUrl) {
+    final profileService = UserProfileService();
+    final customUrlController = TextEditingController(text: currentPhotoUrl);
+    final avatars = [
+      'https://api.dicebear.com/7.x/avataaars/png?seed=Felix',
+      'https://api.dicebear.com/7.x/avataaars/png?seed=Aneka',
+      'https://api.dicebear.com/7.x/avataaars/png?seed=Jack',
+      'https://api.dicebear.com/7.x/avataaars/png?seed=Sophia',
+      'https://api.dicebear.com/7.x/avataaars/png?seed=Boots',
+      'https://api.dicebear.com/7.x/avataaars/png?seed=Spooky',
+      'https://api.dicebear.com/7.x/avataaars/png?seed=Luna',
+      'https://api.dicebear.com/7.x/avataaars/png?seed=Oliver',
+    ];
+
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Choose Profile Picture'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Select a built-in avatar:',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: primary),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: 280,
+                  height: 160,
+                  child: GridView.builder(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                    ),
+                    itemCount: avatars.length,
+                    itemBuilder: (context, index) {
+                      final url = avatars[index];
+                      final isSelected = currentPhotoUrl == url;
+                      return GestureDetector(
+                        onTap: () async {
+                          Navigator.of(context).pop();
+                          try {
+                            await profileService.updatePhotoUrl(uid, url);
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Failed to update: $e')),
+                              );
+                            }
+                          }
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: isSelected ? primary : Colors.transparent,
+                              width: 3,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(9),
+                            child: Image.network(
+                              url,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(Icons.person);
+                              },
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const Text(
+                  'Or paste custom image URL:',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: primary),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: customUrlController,
+                  decoration: const InputDecoration(
+                    hintText: 'https://example.com/avatar.jpg',
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                final url = customUrlController.text.trim();
+                Navigator.of(context).pop();
+                try {
+                  await profileService.updatePhotoUrl(uid, url);
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to update: $e')),
+                    );
+                  }
+                }
+              },
+              child: const Text('Save URL'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -22,37 +142,7 @@ class ProfileScreen extends StatelessWidget {
     final profileService = UserProfileService();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FB),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: false,
-        title: Row(
-          children: [
-            Image.asset('assets/permas_logo.png', width: 30, height: 30),
-            const SizedBox(width: 10),
-            const Text(
-              'PERMAS',
-              style: TextStyle(
-                color: primary,
-                fontWeight: FontWeight.w900,
-                fontSize: 20,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton.icon(
-            onPressed: () => _logout(context),
-            icon: const Icon(Icons.logout),
-            label: const Text('Logout'),
-            style: TextButton.styleFrom(
-              foregroundColor: primary,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-            ),
-          ),
-        ],
-      ),
+      backgroundColor: Colors.transparent,
       body: user == null
           ? const Center(child: Text('No user signed in.'))
           : StreamBuilder<AppUserProfile?>(
@@ -67,24 +157,63 @@ class ProfileScreen extends StatelessWidget {
                     : user.email ?? 'No email available';
                 final role = profile?.role ?? 'member';
 
+                final hasPhoto = profile?.photoUrl != null && profile!.photoUrl!.isNotEmpty;
+
                 return SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 24,
-                  ),
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      const Text(
+                        'PROFILE',
+                        style: TextStyle(
+                          color: primary,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
                       const SizedBox(height: 24),
-                      CircleAvatar(
-                        radius: 48,
-                        backgroundColor: primary,
-                        child: Text(
-                          name.isNotEmpty ? name[0].toUpperCase() : 'P',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 38,
-                            fontWeight: FontWeight.w900,
+                      Center(
+                        child: GestureDetector(
+                          onTap: () => _showAvatarPicker(context, user.uid, profile?.photoUrl),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              CircleAvatar(
+                                radius: 54,
+                                backgroundColor: primary.withValues(alpha: 0.1),
+                                child: CircleAvatar(
+                                  radius: 48,
+                                  backgroundColor: primary,
+                                  backgroundImage: hasPhoto
+                                      ? NetworkImage(profile.photoUrl ?? '')
+                                      : null,
+                                  child: !hasPhoto
+                                      ? Text(
+                                          name.isNotEmpty ? name[0].toUpperCase() : 'P',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 38,
+                                            fontWeight: FontWeight.w900,
+                                          ),
+                                        )
+                                      : null,
+                                ),
+                              ),
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: primary,
+                                  child: const Icon(
+                                    Icons.edit,
+                                    color: Colors.white,
+                                    size: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -151,6 +280,20 @@ class ProfileScreen extends StatelessWidget {
                                   : 'Not recorded',
                             ),
                           ],
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+                      FilledButton.icon(
+                        onPressed: () => _logout(context),
+                        icon: const Icon(Icons.logout),
+                        label: const Text('LOGOUT'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFFC62828),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
                       ),
                     ],

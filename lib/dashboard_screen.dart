@@ -6,6 +6,7 @@ import 'announcement_screen.dart';
 import 'event_screen.dart';
 import 'feedback_screen.dart';
 import 'models/app_user_profile.dart';
+import 'models/event_item.dart';
 import 'models/notification_model.dart';
 import 'notification_popup.dart';
 import 'notification_provider.dart';
@@ -22,7 +23,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  int _selectedTab = 0;
+  int _selectedTab = 1;
   bool _isRefreshingEmail = false;
   bool _isSendingVerification = false;
   late final NotificationProvider _notificationProvider;
@@ -77,11 +78,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  void _openProfilePage() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => const ProfileScreen()));
-  }
 
   void _openNotificationDetails(NotificationModel notification) {
     Navigator.of(context).push(
@@ -334,30 +330,101 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title: 'Events',
                 subtitle: 'Browse academic, social, and career activities.',
                 background: const Color(0xFFF9E8B8),
-                onTap: () => setState(() => _selectedTab = 1),
+                onTap: () => setState(() => _selectedTab = 2),
               ),
               _buildFeatureCard(
                 icon: Icons.campaign,
                 title: 'Announcements',
                 subtitle: 'Read official updates and urgent notices.',
                 background: const Color(0xFFDDF5FF),
-                onTap: () => setState(() => _selectedTab = 2),
+                onTap: () => setState(() => _selectedTab = 3),
               ),
               _buildFeatureCard(
                 icon: Icons.person_outline,
                 title: 'Profile',
                 subtitle: 'Review your PERMAS account information.',
                 background: const Color(0xFFEDE9FF),
-                onTap: _openProfilePage,
+                onTap: () => setState(() => _selectedTab = 0),
               ),
               _buildFeatureCard(
                 icon: Icons.support_agent,
                 title: 'Feedback',
                 subtitle: 'Send ideas, questions, or support requests.',
                 background: const Color(0xFFF7E7E5),
-                onTap: () => setState(() => _selectedTab = 3),
+                onTap: () => setState(() => _selectedTab = 4),
               ),
             ],
+          ),
+          StreamBuilder<List<EventItem>>(
+            stream: _eventService.watchEvents(sort: EventSort.upcoming),
+            builder: (context, snapshot) {
+              final upcoming = (snapshot.data ?? const [])
+                  .where((e) => e.isUpcoming)
+                  .toList();
+              if (upcoming.isEmpty) {
+                return const SizedBox.shrink();
+              }
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 24),
+                  const Text(
+                    'UPCOMING EVENTS',
+                    style: TextStyle(
+                      color: primary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ...upcoming.take(2).map((event) {
+                    final deadline = _formatDDMMYY(event.registrationDueDate);
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: cardBackground,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: const Color(0xFFE5EAF2)),
+                      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        title: Text(
+                          event.title,
+                          style: const TextStyle(
+                            color: primary,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                          ),
+                        ),
+                        subtitle: Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Text(
+                            'Register Before : $deadline',
+                            style: const TextStyle(
+                              color: textSecondary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        trailing: const Icon(
+                          Icons.arrow_forward_ios,
+                          size: 16,
+                          color: textSecondary,
+                        ),
+                        onTap: () {
+                          setState(() => _selectedTab = 2); // Switch to Events tab
+                        },
+                      ),
+                    );
+                  }),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 24),
           Container(
@@ -385,14 +452,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   subtitle:
                       'Title, description, date, time, venue, category, status, registration due date, optional image.',
                   icon: Icons.event_available,
-                  onTap: () => setState(() => _selectedTab = 1),
+                  onTap: () => setState(() => _selectedTab = 2),
                 ),
                 const SizedBox(height: 16),
                 _RecentActivityItem(
                   title: 'Firestore Announcements Service',
                   subtitle: 'General and urgent announcements with admin CRUD.',
                   icon: Icons.campaign_outlined,
-                  onTap: () => setState(() => _selectedTab = 2),
+                  onTap: () => setState(() => _selectedTab = 3),
                 ),
               ],
             ),
@@ -402,18 +469,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  String _formatDDMMYY(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final year = date.year.toString().substring(date.year.toString().length - 2);
+    return '$day/$month/$year';
+  }
+
   Widget _contentForTab(AppUserProfile? profile) {
     switch (_selectedTab) {
-      case 1:
-        return EventsScreen(profile: profile, service: _eventService);
+      case 0:
+        return const ProfileScreen();
       case 2:
+        return EventsScreen(profile: profile, service: _eventService);
+      case 3:
         return AnnouncementsScreen(
           profile: profile,
           service: _announcementService,
         );
-      case 3:
+      case 4:
         return FeedbackScreen(profile: profile);
-      case 0:
+      case 1:
       default:
         return _dashboardContent(profile);
     }
@@ -569,14 +645,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                             ],
                             const Spacer(),
-                            IconButton(
-                              tooltip: 'Profile',
-                              onPressed: _openProfilePage,
-                              icon: const CircleAvatar(
-                                backgroundColor: primary,
-                                child: Icon(Icons.person, color: Colors.white),
-                              ),
-                            ),
                           ],
                         ),
                       ),
@@ -595,6 +663,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               showUnselectedLabels: true,
               type: BottomNavigationBarType.fixed,
               items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.person),
+                  label: 'Profile',
+                ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.home_filled),
                   label: 'Home',
