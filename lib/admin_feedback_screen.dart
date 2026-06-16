@@ -137,18 +137,37 @@ class _AdminFeedbackScreenState extends State<AdminFeedbackScreen> {
 
           return Scaffold(
             backgroundColor: const Color(0xFFF7F9FB),
-            appBar: AppBar(
-              title: const Text('EVENT FEEDBACK'),
-              foregroundColor: primary,
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              centerTitle: false,
-            ),
             body: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'EVENT FEEDBACK',
+                        style: TextStyle(
+                          color: Color(0xFF001E40),
+                          fontSize: 38,
+                          fontWeight: FontWeight.w900,
+                          height: 1,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'Review and manage submitted event feedback from members.',
+                        style: TextStyle(
+                          color: textSecondary,
+                          fontSize: 14,
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
