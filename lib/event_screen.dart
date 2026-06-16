@@ -1728,12 +1728,12 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
   Future<void> _updateStatus(String docId, String status) async {
     try {
       await widget.participationService.updateStatus(docId, status);
-      if (!context.mounted) return;
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Participant marked as $status.')),
       );
     } catch (e) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to update status: $e')),
       );
@@ -1823,7 +1823,7 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
       await Future.wait(
         selectedPending.map((participant) => widget.participationService.updateStatus(participant.id, 'confirmed')),
       );
-      if (!context.mounted) return;
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${selectedPending.length} request(s) approved.')),
       );
@@ -1832,7 +1832,7 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
         _selectionMode = false;
       });
     } catch (e) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to approve selected participants: $e')),
       );
@@ -1874,7 +1874,7 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
       await Future.wait(
         selectedParticipants.map((participant) => widget.participationService.deleteParticipation(participant.id)),
       );
-      if (!context.mounted) return;
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${selectedParticipants.length} participant(s) removed.')),
       );
@@ -1883,7 +1883,7 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
         _selectionMode = false;
       });
     } catch (e) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to remove selected participants: $e')),
       );
