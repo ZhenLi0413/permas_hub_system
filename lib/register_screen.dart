@@ -14,6 +14,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _matricController = TextEditingController();
+  final _facultyController = TextEditingController();
+  final _yearController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
   late final UserProfileService _profileService = UserProfileService();
@@ -25,6 +28,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
+    _matricController.dispose();
+    _facultyController.dispose();
+    _yearController.dispose();
     _passwordController.dispose();
     _confirmController.dispose();
     super.dispose();
@@ -65,6 +71,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       await _profileService.createRegistrationProfile(
         user: user,
         name: _nameController.text.trim(),
+        matricNo: _matricController.text.trim(),
+        faculty: _facultyController.text.trim(),
+        yearOfStudy: _yearController.text.trim(),
       );
       await user.sendEmailVerification();
 
@@ -73,7 +82,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Account created. Verification email sent.'),
+          content: Text('Application submitted. Verification email sent.'),
         ),
       );
       Navigator.of(context).pop();
@@ -188,7 +197,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           const SizedBox(height: 6),
                           const Text(
-                            'Register with your PERMAS details to join the hub.',
+                            'Submit your PERMAS details for membership review.',
                             style: TextStyle(color: label, fontSize: 13),
                           ),
                           const SizedBox(height: 20),
@@ -250,6 +259,69 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     },
                                   ),
                                   const SizedBox(height: 14),
+                                  const _FieldLabel('MATRIC NUMBER'),
+                                  const SizedBox(height: 8),
+                                  TextFormField(
+                                    controller: _matricController,
+                                    textCapitalization:
+                                        TextCapitalization.characters,
+                                    decoration: _inputDecoration(
+                                      hint: 'A23CS0000',
+                                      border: border,
+                                      background: fieldBg,
+                                    ),
+                                    validator: (value) {
+                                      if (value == null ||
+                                          value.trim().isEmpty) {
+                                        return 'Please enter your matric number.';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 14),
+                                  const _FieldLabel('FACULTY'),
+                                  const SizedBox(height: 8),
+                                  TextFormField(
+                                    controller: _facultyController,
+                                    textCapitalization:
+                                        TextCapitalization.words,
+                                    decoration: _inputDecoration(
+                                      hint: 'Faculty of Computing',
+                                      border: border,
+                                      background: fieldBg,
+                                    ),
+                                    validator: (value) {
+                                      if (value == null ||
+                                          value.trim().isEmpty) {
+                                        return 'Please enter your faculty.';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 14),
+                                  const _FieldLabel('YEAR OF STUDY'),
+                                  const SizedBox(height: 8),
+                                  TextFormField(
+                                    controller: _yearController,
+                                    keyboardType: TextInputType.number,
+                                    decoration: _inputDecoration(
+                                      hint: '1',
+                                      border: border,
+                                      background: fieldBg,
+                                    ),
+                                    validator: (value) {
+                                      final year = int.tryParse(
+                                        value?.trim() ?? '',
+                                      );
+                                      if (year == null ||
+                                          year < 1 ||
+                                          year > 6) {
+                                        return 'Please enter a valid study year (1-6).';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 14),
                                   Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
@@ -258,7 +330,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       border: Border.all(color: border),
                                     ),
                                     child: const Text(
-                                      'New accounts are created with Member access. Admin access is assigned separately.',
+                                      'Your application will be reviewed by the PERMAS committee before member access is granted.',
                                       style: TextStyle(
                                         color: Color(0xFF44546A),
                                         fontSize: 12,
@@ -464,4 +536,3 @@ class _FieldLabel extends StatelessWidget {
     );
   }
 }
-

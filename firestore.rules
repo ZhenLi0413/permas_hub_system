@@ -31,17 +31,37 @@ service cloud.firestore {
       return isAdmin() || isCommittee();
     }
 
+    function canManageMembers() {
+      return isAdmin() || isCommittee();
+    }
+
+    function hasMemberAccess() {
+      return canManageMembers() ||
+          (signedIn() &&
+              exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+              get(/databases/$(database)/documents/users/$(request.auth.uid))
+                  .data.get('membershipStatus', 'approved') == 'approved');
+    }
+
     match /users/{userId} {
       allow create: if (isOwner(userId) &&
-              request.resource.data.role == 'member') ||
+              request.resource.data.role == 'member' &&
+              request.resource.data.membershipStatus == 'pending') ||
           (isOwner(userId) &&
               isAdminEmail() &&
               request.resource.data.role == 'admin');
-      allow read: if isOwner(userId) || isAdmin();
+      allow read: if isOwner(userId) || canManageMembers();
       allow update: if isAdmin() ||
+          (canManageMembers() &&
+              request.resource.data.diff(resource.data).affectedKeys()
+                  .hasOnly(['membershipStatus', 'reviewedBy', 'reviewedAt',
+                    'rejectionReason', 'updatedAt']) &&
+              request.resource.data.membershipStatus in ['approved', 'rejected']) ||
           (isOwner(userId) &&
               resource.data.role == 'member' &&
-              request.resource.data.role == 'member');
+              request.resource.data.role == 'member' &&
+              request.resource.data.get('membershipStatus', 'approved') ==
+                  resource.data.get('membershipStatus', 'approved'));
       allow delete: if isAdmin();
 
       match /notifications/{notificationId} {
@@ -53,36 +73,36 @@ service cloud.firestore {
     }
 
     match /events/{eventId} {
-      allow read: if signedIn();
+      allow read: if hasMemberAccess();
       allow create, update, delete: if canManageEvents();
     }
 
     match /announcements/{announcementId} {
-      allow read: if signedIn();
+      allow read: if hasMemberAccess();
       allow create, update, delete: if isAdmin();
     }
 
     match /feedbacks/{feedbackId} {
-      // Any signed-in user can submit their own feedback
-      allow create: if signedIn() &&
+      // Approved members can submit their own feedback.
+      allow create: if hasMemberAccess() &&
           request.resource.data.userId == request.auth.uid;
       // Owners see their own feedback; event managers can evaluate all events.
       allow read: if canManageEvents() ||
-          (signedIn() && resource.data.userId == request.auth.uid);
+          (hasMemberAccess() && resource.data.userId == request.auth.uid);
       // Only admin can update (replies, status) or delete
       allow update, delete: if isAdmin();
     }
 
     match /participations/{participationId} {
-      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
-      allow read: if signedIn() && (resource == null || resource.data.userId == request.auth.uid || canManageEvents());
-      allow update: if signedIn() && (
+      allow create: if hasMemberAccess() && request.resource.data.userId == request.auth.uid;
+      allow read: if hasMemberAccess() && (resource == null || resource.data.userId == request.auth.uid || canManageEvents());
+      allow update: if hasMemberAccess() && (
         (resource.data.userId == request.auth.uid &&
          request.resource.data.userId == request.auth.uid &&
          (request.resource.data.status == resource.data.status || request.resource.data.status == 'pending')) ||
         canManageEvents()
       );
-      allow delete: if signedIn() && (resource.data.userId == request.auth.uid || canManageEvents());
+      allow delete: if hasMemberAccess() && (resource.data.userId == request.auth.uid || canManageEvents());
     }
 
     match /{document=**} {

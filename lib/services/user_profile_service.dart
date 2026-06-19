@@ -27,14 +27,42 @@ class UserProfileService {
     return AppUserProfile.fromSnapshot(snapshot);
   }
 
+  Stream<List<AppUserProfile>> watchMembershipApplications() {
+    return _users.snapshots().map((snapshot) {
+      final profiles = snapshot.docs
+          .map(AppUserProfile.fromSnapshot)
+          .whereType<AppUserProfile>()
+          .where((profile) => !profile.isAdmin && !profile.isCommittee)
+          .toList();
+      profiles.sort((a, b) {
+        const order = <String, int>{'pending': 0, 'rejected': 1, 'approved': 2};
+        final statusComparison = (order[a.membershipStatus] ?? 3).compareTo(
+          order[b.membershipStatus] ?? 3,
+        );
+        if (statusComparison != 0) return statusComparison;
+        return (b.createdAt ?? DateTime(1970)).compareTo(
+          a.createdAt ?? DateTime(1970),
+        );
+      });
+      return profiles;
+    });
+  }
+
   Future<void> createRegistrationProfile({
     required User user,
     required String name,
+    required String matricNo,
+    required String faculty,
+    required String yearOfStudy,
   }) async {
     await _users.doc(user.uid).set(<String, Object?>{
       'name': name.trim(),
       'email': user.email ?? '',
       'role': 'member',
+      'membershipStatus': 'pending',
+      'matricNo': matricNo.trim(),
+      'faculty': faculty.trim(),
+      'yearOfStudy': yearOfStudy.trim(),
       'acceptedTerms': true,
       'acceptedTermsAt': FieldValue.serverTimestamp(),
       'createdAt': FieldValue.serverTimestamp(),
@@ -60,6 +88,7 @@ class UserProfileService {
           : 'PERMAS Member',
       'email': user.email ?? '',
       'role': 'member',
+      'membershipStatus': 'pending',
       'acceptedTerms': false,
       'acceptedTermsAt': null,
       'createdAt': FieldValue.serverTimestamp(),
@@ -75,6 +104,7 @@ class UserProfileService {
       'name': 'PERMAS Admin',
       'email': adminEmail,
       'role': 'admin',
+      'membershipStatus': 'approved',
       'acceptedTerms': true,
       'updatedAt': FieldValue.serverTimestamp(),
     };
@@ -113,7 +143,24 @@ class UserProfileService {
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
+
+  Future<void> reviewMembershipApplication({
+    required String uid,
+    required String reviewerId,
+    required bool approve,
+    String? rejectionReason,
+  }) async {
+    final reason = rejectionReason?.trim();
+    if (!approve && (reason == null || reason.isEmpty)) {
+      throw ArgumentError('A rejection reason is required.');
+    }
+
+    await _users.doc(uid).update(<String, Object?>{
+      'membershipStatus': approve ? 'approved' : 'rejected',
+      'reviewedBy': reviewerId,
+      'reviewedAt': FieldValue.serverTimestamp(),
+      'rejectionReason': approve ? null : reason,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
 }
-
-
-

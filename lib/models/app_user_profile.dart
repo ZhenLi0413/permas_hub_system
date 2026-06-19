@@ -7,6 +7,7 @@ class AppUserProfile {
     required this.email,
     required this.role,
     required this.acceptedTerms,
+    required this.membershipStatus,
     this.photoUrl,
     this.matricNo,
     this.faculty,
@@ -14,6 +15,9 @@ class AppUserProfile {
     this.acceptedTermsAt,
     this.createdAt,
     this.updatedAt,
+    this.reviewedAt,
+    this.reviewedBy,
+    this.rejectionReason,
   });
 
   final String uid;
@@ -21,6 +25,7 @@ class AppUserProfile {
   final String email;
   final String role;
   final bool acceptedTerms;
+  final String membershipStatus;
   final String? photoUrl;
   final String? matricNo;
   final String? faculty;
@@ -28,10 +33,17 @@ class AppUserProfile {
   final DateTime? acceptedTermsAt;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final DateTime? reviewedAt;
+  final String? reviewedBy;
+  final String? rejectionReason;
 
   bool get isAdmin => role == 'admin';
   bool get isCommittee => role == 'committee';
   bool get canManageEvents => isAdmin || isCommittee;
+  bool get canManageMembers => isAdmin || isCommittee;
+  bool get isMembershipPending => membershipStatus == 'pending';
+  bool get isMembershipApproved => membershipStatus == 'approved';
+  bool get isMembershipRejected => membershipStatus == 'rejected';
 
   static AppUserProfile? fromSnapshot(
     DocumentSnapshot<Map<String, dynamic>> snapshot,
@@ -49,6 +61,10 @@ class AppUserProfile {
       email: data['email'] as String? ?? '',
       role: _normalizeRole(data['role'] as String?),
       acceptedTerms: data['acceptedTerms'] as bool? ?? false,
+      // Profiles created before the application workflow are existing members.
+      membershipStatus: _normalizeMembershipStatus(
+        data['membershipStatus'] as String?,
+      ),
       photoUrl: data['photoUrl'] as String?,
       matricNo: data['matricNo'] as String?,
       faculty: data['faculty'] as String?,
@@ -56,6 +72,9 @@ class AppUserProfile {
       acceptedTermsAt: _readDate(data['acceptedTermsAt']),
       createdAt: _readDate(data['createdAt']),
       updatedAt: _readDate(data['updatedAt']),
+      reviewedAt: _readDate(data['reviewedAt']),
+      reviewedBy: _readOptionalString(data['reviewedBy']),
+      rejectionReason: _readOptionalString(data['rejectionReason']),
     );
   }
 
@@ -77,5 +96,19 @@ class AppUserProfile {
       return role!;
     }
     return 'member';
+  }
+
+  static String _normalizeMembershipStatus(String? status) {
+    if (status == 'pending' || status == 'approved' || status == 'rejected') {
+      return status!;
+    }
+    return 'approved';
+  }
+
+  static String? _readOptionalString(Object? value) {
+    if (value is! String || value.trim().isEmpty) {
+      return null;
+    }
+    return value.trim();
   }
 }

@@ -67,14 +67,19 @@ class NotificationService {
     final membersSnapshot = await _users
         .where('role', isEqualTo: 'member')
         .get();
-    if (membersSnapshot.docs.isEmpty) {
+    final approvedMembers = membersSnapshot.docs.where((member) {
+      final status = member.data()['membershipStatus'] as String?;
+      // Missing status represents a member created before applications existed.
+      return status == null || status == 'approved';
+    }).toList();
+    if (approvedMembers.isEmpty) {
       return;
     }
 
     final createdAt = DateTime.now();
     final batch = _firestore.batch();
 
-    for (final member in membersSnapshot.docs) {
+    for (final member in approvedMembers) {
       final notification = NotificationModel.fromEvent(
         id: '',
         recipientUserId: member.id,

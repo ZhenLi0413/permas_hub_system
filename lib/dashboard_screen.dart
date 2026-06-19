@@ -8,6 +8,7 @@ import 'feedback_screen.dart';
 import 'models/app_user_profile.dart';
 import 'models/event_item.dart';
 import 'models/notification_model.dart';
+import 'membership_applications_screen.dart';
 import 'notification_popup.dart';
 import 'notification_provider.dart';
 import 'profile_screen.dart';
@@ -363,6 +364,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
                       builder: (_) => const ReportingScreen(),
+                    ),
+                  ),
+                ),
+              if (profile?.canManageMembers ?? false)
+                _buildFeatureCard(
+                  icon: Icons.person_add_alt_1_outlined,
+                  title: 'Applications',
+                  subtitle: 'Review and approve valid club member requests.',
+                  background: const Color(0xFFFFEDCF),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const MembershipApplicationsScreen(),
                     ),
                   ),
                 ),
