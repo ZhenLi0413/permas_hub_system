@@ -66,8 +66,8 @@ service cloud.firestore {
       // Any signed-in user can submit their own feedback
       allow create: if signedIn() &&
           request.resource.data.userId == request.auth.uid;
-      // Owner can read their own; admin can read all
-      allow read: if isAdmin() ||
+      // Owners see their own feedback; event managers can evaluate all events.
+      allow read: if canManageEvents() ||
           (signedIn() && resource.data.userId == request.auth.uid);
       // Only admin can update (replies, status) or delete
       allow update, delete: if isAdmin();

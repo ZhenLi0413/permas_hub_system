@@ -11,6 +11,7 @@ import 'models/notification_model.dart';
 import 'notification_popup.dart';
 import 'notification_provider.dart';
 import 'profile_screen.dart';
+import 'reporting_screen.dart';
 import 'services/announcement_service.dart';
 import 'services/event_service.dart';
 import 'services/user_profile_service.dart';
@@ -77,7 +78,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       debugPrintStack(stackTrace: stackTrace);
     }
   }
-
 
   void _openNotificationDetails(NotificationModel notification) {
     Navigator.of(context).push(
@@ -353,6 +353,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 background: const Color(0xFFF7E7E5),
                 onTap: () => setState(() => _selectedTab = 3),
               ),
+              if (profile?.canManageEvents ?? false)
+                _buildFeatureCard(
+                  icon: Icons.analytics_outlined,
+                  title: 'Reports',
+                  subtitle:
+                      'Evaluate participation, attendance, and event feedback.',
+                  background: const Color(0xFFE3F3EA),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const ReportingScreen(),
+                    ),
+                  ),
+                ),
             ],
           ),
           StreamBuilder<List<EventItem>>(
@@ -417,7 +430,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           color: textSecondary,
                         ),
                         onTap: () {
-                          setState(() => _selectedTab = 1); // Switch to Events tab
+                          setState(
+                            () => _selectedTab = 1,
+                          ); // Switch to Events tab
                         },
                       ),
                     );
@@ -472,7 +487,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _formatDDMMYY(DateTime date) {
     final day = date.day.toString().padLeft(2, '0');
     final month = date.month.toString().padLeft(2, '0');
-    final year = date.year.toString().substring(date.year.toString().length - 2);
+    final year = date.year.toString().substring(
+      date.year.toString().length - 2,
+    );
     return '$day/$month/$year';
   }
 
