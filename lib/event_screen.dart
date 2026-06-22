@@ -140,7 +140,8 @@ class _EventsScreenState extends State<EventsScreen> {
         final allParticipations = allParticipationSnapshot.data ?? const [];
         final eventRegisteredCount = <String, int>{};
         for (final p in allParticipations) {
-          eventRegisteredCount[p.eventId] = (eventRegisteredCount[p.eventId] ?? 0) + 1;
+          eventRegisteredCount[p.eventId] =
+              (eventRegisteredCount[p.eventId] ?? 0) + 1;
         }
 
         return StreamBuilder<List<EventParticipation>>(
@@ -148,88 +149,91 @@ class _EventsScreenState extends State<EventsScreen> {
           builder: (context, participationSnapshot) {
             final participations = participationSnapshot.data ?? const [];
             final statusMap = {
-              for (var p in participations) p.eventId: p.status
+              for (var p in participations) p.eventId: p.status,
             };
 
             return StreamBuilder<List<EventItem>>(
-          stream: widget.service.watchEvents(
-            filterCategory: _selectedCategory,
-            sort: _sort,
-          ),
-          builder: (context, snapshot) {
-            return CustomScrollView(
-              slivers: [
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
-                  sliver: SliverToBoxAdapter(
-                    child: _EventsHeader(
-                      isAdmin: _canManageEvents,
-                      selectedCategory: _selectedCategory,
-                      sort: _sort,
-                      onCategoryChanged: (category) {
-                        setState(() => _selectedCategory = category);
-                      },
-                      onSortChanged: (sort) {
-                        setState(() => _sort = sort);
-                      },
-                      onAdd: () => _openEditor(),
-                    ),
-                  ),
-                ),
-                if (snapshot.hasError)
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: _StateMessage(
-                      icon: Icons.cloud_off,
-                      title: 'Unable to load events',
-                      subtitle: snapshot.error.toString(),
-                    ),
-                  )
-                else if (snapshot.connectionState == ConnectionState.waiting &&
-                    !snapshot.hasData)
-                  const SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(child: CircularProgressIndicator()),
-                  )
-                else if ((snapshot.data ?? const <EventItem>[]).isEmpty)
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: _StateMessage(
-                      icon: Icons.event_busy,
-                      title: 'No events yet',
-                      subtitle: _canManageEvents
-                          ? 'Create the first event for the PERMAS community.'
-                          : 'New PERMAS events will appear here soon.',
-                    ),
-                  )
-                else
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
-                    sliver: SliverList.separated(
-                      itemCount: snapshot.data!.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 18),
-                      itemBuilder: (context, index) {
-                        final event = snapshot.data![index];
-                        return _EventCard(
-                          event: event,
+              stream: widget.service.watchEvents(
+                filterCategory: _selectedCategory,
+                sort: _sort,
+              ),
+              builder: (context, snapshot) {
+                return CustomScrollView(
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+                      sliver: SliverToBoxAdapter(
+                        child: _EventsHeader(
                           isAdmin: _canManageEvents,
-                          participationStatus: statusMap[event.id],
-                          registeredCount: eventRegisteredCount[event.id] ?? 0,
-                          onTap: () => _openDetails(event),
-                          onEdit: () => _openEditor(event),
-                          onDelete: () => _deleteEvent(event),
-                        );
-                      },
+                          selectedCategory: _selectedCategory,
+                          sort: _sort,
+                          onCategoryChanged: (category) {
+                            setState(() => _selectedCategory = category);
+                          },
+                          onSortChanged: (sort) {
+                            setState(() => _sort = sort);
+                          },
+                          onAdd: () => _openEditor(),
+                        ),
+                      ),
                     ),
-                  ),
-              ],
+                    if (snapshot.hasError)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: _StateMessage(
+                          icon: Icons.cloud_off,
+                          title: 'Unable to load events',
+                          subtitle: snapshot.error.toString(),
+                        ),
+                      )
+                    else if (snapshot.connectionState ==
+                            ConnectionState.waiting &&
+                        !snapshot.hasData)
+                      const SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else if ((snapshot.data ?? const <EventItem>[]).isEmpty)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: _StateMessage(
+                          icon: Icons.event_busy,
+                          title: 'No events yet',
+                          subtitle: _canManageEvents
+                              ? 'Create the first event for the PERMAS community.'
+                              : 'New PERMAS events will appear here soon.',
+                        ),
+                      )
+                    else
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
+                        sliver: SliverList.separated(
+                          itemCount: snapshot.data!.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 18),
+                          itemBuilder: (context, index) {
+                            final event = snapshot.data![index];
+                            return _EventCard(
+                              event: event,
+                              isAdmin: _canManageEvents,
+                              participationStatus: statusMap[event.id],
+                              registeredCount:
+                                  eventRegisteredCount[event.id] ?? 0,
+                              onTap: () => _openDetails(event),
+                              onEdit: () => _openEditor(event),
+                              onDelete: () => _deleteEvent(event),
+                            );
+                          },
+                        ),
+                      ),
+                  ],
+                );
+              },
             );
           },
         );
       },
     );
-  },
-);
   }
 }
 
@@ -274,11 +278,7 @@ class _EventsHeader extends StatelessWidget {
         const SizedBox(height: 10),
         const Text(
           'Discover, participate, and lead within the university community.',
-          style: TextStyle(
-            color: Color(0xFF4A5D72),
-            fontSize: 14,
-            height: 1.5,
-          ),
+          style: TextStyle(color: Color(0xFF4A5D72), fontSize: 14, height: 1.5),
         ),
         if (isAdmin) ...[
           const SizedBox(height: 14),
@@ -542,7 +542,6 @@ class _EventCard extends StatelessWidget {
       ),
     );
   }
-
 }
 
 class _EventDetailsSheet extends StatelessWidget {
@@ -678,29 +677,41 @@ class _EventDetailsSheet extends StatelessWidget {
               stream: participationService.watchEventParticipations(event.id),
               builder: (context, participantsSnapshot) {
                 final participants = participantsSnapshot.data ?? const [];
-                final pendingCount = participants.where((p) => p.status == 'pending').length;
-                final confirmedCount = participants.where((p) => p.status == 'confirmed').length;
-                final attendedCount = participants.where((p) => p.status == 'attended').length;
+                final pendingCount = participants
+                    .where((p) => p.status == 'pending')
+                    .length;
+                final confirmedCount = participants
+                    .where((p) => p.status == 'confirmed')
+                    .length;
+                final attendedCount = participants
+                    .where((p) => p.status == 'attended')
+                    .length;
                 final registeredCount = participants.length;
-                final hasLimitedCapacity = event.capacity != null && event.capacity! > 0;
+                final hasLimitedCapacity =
+                    event.capacity != null && event.capacity! > 0;
                 final capacityLabel = event.capacity?.toString() ?? 'Unlimited';
                 final occupancyRate = hasLimitedCapacity
-                    ? ((registeredCount / event.capacity!) * 100).clamp(0, 100).round()
+                    ? ((registeredCount / event.capacity!) * 100)
+                          .clamp(0, 100)
+                          .round()
                     : 0;
                 final attendanceRate = confirmedCount > 0
                     ? ((attendedCount / confirmedCount) * 100).round()
                     : 0;
-                final isDeadlinePassed = DateTime.now().isAfter(event.registrationDueDate);
+                final isDeadlinePassed = DateTime.now().isAfter(
+                  event.registrationDueDate,
+                );
                 final isOpen = event.status == 'open' && !isDeadlinePassed;
-                final isFull = hasLimitedCapacity && confirmedCount >= event.capacity!;
+                final isFull =
+                    hasLimitedCapacity && confirmedCount >= event.capacity!;
                 final canRegister = isOpen && !isFull;
                 final registerButtonLabel = isFull
                     ? 'EVENT FULL'
                     : isDeadlinePassed
-                        ? 'REGISTRATION CLOSED (DEADLINE PASSED)'
-                        : isOpen
-                            ? 'REGISTER FOR EVENT'
-                            : 'REGISTRATION CLOSED';
+                    ? 'REGISTRATION CLOSED (DEADLINE PASSED)'
+                    : isOpen
+                    ? 'REGISTER FOR EVENT'
+                    : 'REGISTRATION CLOSED';
 
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -783,16 +794,31 @@ class _EventDetailsSheet extends StatelessWidget {
                             const SizedBox(height: 12),
                             _DetailRow(label: 'Capacity', value: capacityLabel),
                             const SizedBox(height: 8),
-                            _DetailRow(label: 'Registered', value: registeredCount.toString()),
+                            _DetailRow(
+                              label: 'Registered',
+                              value: registeredCount.toString(),
+                            ),
                             const SizedBox(height: 8),
-                            _DetailRow(label: 'Pending', value: pendingCount.toString()),
+                            _DetailRow(
+                              label: 'Pending',
+                              value: pendingCount.toString(),
+                            ),
                             const SizedBox(height: 8),
-                            _DetailRow(label: 'Confirmed', value: confirmedCount.toString()),
+                            _DetailRow(
+                              label: 'Confirmed',
+                              value: confirmedCount.toString(),
+                            ),
                             const SizedBox(height: 8),
-                            _DetailRow(label: 'Attended', value: attendedCount.toString()),
+                            _DetailRow(
+                              label: 'Attended',
+                              value: attendedCount.toString(),
+                            ),
                             if (hasLimitedCapacity) ...[
                               const SizedBox(height: 16),
-                              _DetailRow(label: 'Occupancy Rate', value: '$occupancyRate%'),
+                              _DetailRow(
+                                label: 'Occupancy Rate',
+                                value: '$occupancyRate%',
+                              ),
                               const SizedBox(height: 8),
                               LinearProgressIndicator(
                                 value: occupancyRate / 100.0,
@@ -802,7 +828,10 @@ class _EventDetailsSheet extends StatelessWidget {
                               ),
                             ],
                             const SizedBox(height: 16),
-                            _DetailRow(label: 'Attendance Rate', value: '$attendanceRate%'),
+                            _DetailRow(
+                              label: 'Attendance Rate',
+                              value: '$attendanceRate%',
+                            ),
                             const SizedBox(height: 8),
                             LinearProgressIndicator(
                               value: attendanceRate / 100.0,
@@ -817,7 +846,10 @@ class _EventDetailsSheet extends StatelessWidget {
                     const SizedBox(height: 24),
                     if (!isAdmin) ...[
                       StreamBuilder<EventParticipation?>(
-                        stream: participationService.watchParticipation(event.id, userId),
+                        stream: participationService.watchParticipation(
+                          event.id,
+                          userId,
+                        ),
                         builder: (context, snapshot) {
                           final participation = snapshot.data;
                           if (participation == null) {
@@ -839,7 +871,9 @@ class _EventDetailsSheet extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFF0F4F8),
                                   borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(color: const Color(0xFFD0D8E1)),
+                                  border: Border.all(
+                                    color: const Color(0xFFD0D8E1),
+                                  ),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -856,20 +890,65 @@ class _EventDetailsSheet extends StatelessWidget {
                                         ),
                                         const Spacer(),
                                         _Pill(
-                                          text: participation.status.toUpperCase(),
-                                          background: _getStatusBgColor(participation.status),
-                                          color: _getStatusTextColor(participation.status),
+                                          text: participation.status
+                                              .toUpperCase(),
+                                          background: _getStatusBgColor(
+                                            participation.status,
+                                          ),
+                                          color: _getStatusTextColor(
+                                            participation.status,
+                                          ),
                                         ),
                                       ],
                                     ),
-                                    const Divider(height: 24, color: Color(0xFFD0D8E1)),
-                                    _DetailRow(label: 'Full Name', value: participation.fullName),
+                                    const Divider(
+                                      height: 24,
+                                      color: Color(0xFFD0D8E1),
+                                    ),
+                                    _DetailRow(
+                                      label: 'Full Name',
+                                      value: participation.fullName,
+                                    ),
                                     const SizedBox(height: 8),
-                                    _DetailRow(label: 'Faculty', value: participation.faculty),
+                                    _DetailRow(
+                                      label: 'Faculty',
+                                      value: participation.faculty,
+                                    ),
                                     const SizedBox(height: 8),
-                                    _DetailRow(label: 'Matric No.', value: participation.matricNumber),
+                                    _DetailRow(
+                                      label: 'Matric No.',
+                                      value: participation.matricNumber,
+                                    ),
                                     const SizedBox(height: 8),
-                                    _DetailRow(label: 'College', value: participation.college),
+                                    _DetailRow(
+                                      label: 'College',
+                                      value: participation.college,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    _DetailRow(
+                                      label: 'Course/Program',
+                                      value: participation.courseProgram,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    _DetailRow(
+                                      label: 'Semester',
+                                      value: participation.semester,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    _DetailRow(
+                                      label: 'Phone Number',
+                                      value: participation.phoneNumber,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    _DetailRow(
+                                      label: 'Emergency Contact',
+                                      value: participation.emergencyContact,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    _DetailRow(
+                                      label: 'Dietary Restrictions',
+                                      value: participation.dietaryRestrictions,
+                                    ),
                                   ],
                                 ),
                               ),
@@ -878,15 +957,24 @@ class _EventDetailsSheet extends StatelessWidget {
                                 SizedBox(
                                   height: 50,
                                   child: FilledButton.icon(
-                                    onPressed: () => _markAsAttended(context, participation.id),
-                                    icon: const Icon(Icons.assignment_turned_in_outlined),
+                                    onPressed: () => _markAsAttended(
+                                      context,
+                                      participation.id,
+                                    ),
+                                    icon: const Icon(
+                                      Icons.assignment_turned_in_outlined,
+                                    ),
                                     label: const Text('MARK AS ATTENDED'),
                                   ),
                                 ),
-                              ] else if (participation.status == 'attended') ...[
+                              ] else if (participation.status ==
+                                  'attended') ...[
                                 const SizedBox(height: 16),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 14,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFD4EDDA),
                                     borderRadius: BorderRadius.circular(14),
@@ -970,7 +1058,9 @@ class _EventEditorScreenState extends State<EventEditorScreen> {
     );
     _timeController = TextEditingController(text: event?.time ?? '');
     _venueController = TextEditingController(text: event?.venue ?? '');
-    _capacityController = TextEditingController(text: event?.capacity?.toString() ?? '50');
+    _capacityController = TextEditingController(
+      text: event?.capacity?.toString() ?? '50',
+    );
     _unlimitedParticipants = event?.capacity == null;
     _date = event?.date ?? DateTime.now();
     _registrationDueDate = event?.registrationDueDate ?? DateTime.now();
@@ -1032,7 +1122,9 @@ class _EventEditorScreenState extends State<EventEditorScreen> {
       venue: _venueController.text.trim(),
       category: _category,
       status: _status,
-      capacity: _unlimitedParticipants ? null : int.parse(_capacityController.text.trim()),
+      capacity: _unlimitedParticipants
+          ? null
+          : int.parse(_capacityController.text.trim()),
       registrationDueDate: _registrationDueDate,
       createdBy: widget.event?.createdBy ?? widget.createdBy,
       createdAt: widget.event?.createdAt,
@@ -1274,12 +1366,14 @@ class _EditorField extends StatelessWidget {
       keyboardType: keyboardType,
       enabled: enabled,
       decoration: _formDecoration(label).copyWith(hintText: hint),
-      validator: validator ?? (value) {
-        if (isRequired && (value == null || value.trim().isEmpty)) {
-          return '$label is required.';
-        }
-        return null;
-      },
+      validator:
+          validator ??
+          (value) {
+            if (isRequired && (value == null || value.trim().isEmpty)) {
+              return '$label is required.';
+            }
+            return null;
+          },
     );
   }
 }
@@ -1503,7 +1597,8 @@ class EventRegistrationScreen extends StatefulWidget {
   final DateTime registrationDueDate;
 
   @override
-  State<EventRegistrationScreen> createState() => _EventRegistrationScreenState();
+  State<EventRegistrationScreen> createState() =>
+      _EventRegistrationScreenState();
 }
 
 class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
@@ -1512,7 +1607,15 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
   final _facultyController = TextEditingController();
   final _matricNumberController = TextEditingController();
   final _collegeController = TextEditingController();
+  final _courseProgramController = TextEditingController();
+  final _semesterController = TextEditingController();
+  final _phoneNumberController = TextEditingController();
+  final _emergencyContactController = TextEditingController();
+  final _dietaryRestrictionsController = TextEditingController();
   bool _isSubmitting = false;
+  bool _agreedToTerms = false;
+  bool _consentToMedia = false;
+  bool _showConsentValidation = false;
 
   @override
   void dispose() {
@@ -1520,21 +1623,55 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
     _facultyController.dispose();
     _matricNumberController.dispose();
     _collegeController.dispose();
+    _courseProgramController.dispose();
+    _semesterController.dispose();
+    _phoneNumberController.dispose();
+    _emergencyContactController.dispose();
+    _dietaryRestrictionsController.dispose();
     super.dispose();
   }
 
-  Future<void> _submit() async {
+  String? _requiredValidator(String label, String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return '$label is required.';
+    }
+    return null;
+  }
 
+  String? _phoneValidator(String label, String? value) {
+    final requiredError = _requiredValidator(label, value);
+    if (requiredError != null) {
+      return requiredError;
+    }
+    final normalized = value!.replaceAll(RegExp(r'[^0-9+]'), '');
+    final isValid = RegExp(r'^\+?[0-9]{9,15}$').hasMatch(normalized);
+    if (!isValid) {
+      return 'Enter a valid phone number.';
+    }
+    return null;
+  }
+
+  Future<void> _submit() async {
     if (DateTime.now().isAfter(widget.registrationDueDate)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Registration deadline has passed.'),
-          ),
+        const SnackBar(content: Text('Registration deadline has passed.')),
       );
       return;
     }
 
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    if (!_agreedToTerms || !_consentToMedia) {
+      setState(() => _showConsentValidation = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please provide all required consents before submitting.',
+          ),
+        ),
+      );
       return;
     }
 
@@ -1548,19 +1685,26 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
         faculty: _facultyController.text,
         matricNumber: _matricNumberController.text,
         college: _collegeController.text,
+        courseProgram: _courseProgramController.text,
+        semester: _semesterController.text,
+        phoneNumber: _phoneNumberController.text,
+        emergencyContact: _emergencyContactController.text,
+        dietaryRestrictions: _dietaryRestrictionsController.text,
       );
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Registration submitted. Status is pending.')),
+        const SnackBar(
+          content: Text('Registration submitted. Status is pending.'),
+        ),
       );
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registration failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Registration failed: $e')));
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);
@@ -1572,8 +1716,7 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
   Widget build(BuildContext context) {
     const primary = Color(0xFF003366);
 
-    final isClosed = 
-        DateTime.now().isAfter(widget.registrationDueDate);
+    final isClosed = DateTime.now().isAfter(widget.registrationDueDate);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9FB),
@@ -1607,15 +1750,12 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                   '${widget.registrationDueDate.year}',
                   style: const TextStyle(
                     color: Color(0xFFFF0000),
-                    fontWeight: FontWeight.w700
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const Text(
                   'Please fill in your correct information to participate in this club activity.',
-                  style: TextStyle(
-                    color: Color(0xFF4A5D72),
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Color(0xFF4A5D72), fontSize: 14),
                 ),
                 const SizedBox(height: 24),
                 _RegistrationField(
@@ -1641,6 +1781,113 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                   label: 'College',
                   hint: 'e.g. Kolej Tun Razak',
                 ),
+                const SizedBox(height: 16),
+                _RegistrationField(
+                  controller: _courseProgramController,
+                  label: 'Course/Program',
+                  hint: 'e.g. Bachelor of Computer Science',
+                ),
+                const SizedBox(height: 16),
+                _RegistrationField(
+                  controller: _semesterController,
+                  label: 'Semester',
+                  hint: 'e.g. Semester 6',
+                ),
+                const SizedBox(height: 16),
+                _RegistrationField(
+                  controller: _phoneNumberController,
+                  label: 'Phone Number',
+                  hint: 'e.g. +60123456789',
+                  keyboardType: TextInputType.phone,
+                  validator: (value) => _phoneValidator('Phone Number', value),
+                ),
+                const SizedBox(height: 16),
+                _RegistrationField(
+                  controller: _emergencyContactController,
+                  label: 'Emergency Contact',
+                  hint: 'Name and phone number',
+                ),
+                const SizedBox(height: 16),
+                _RegistrationField(
+                  controller: _dietaryRestrictionsController,
+                  label: 'Dietary Restrictions',
+                  hint: 'e.g. Vegetarian / None',
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color:
+                          _showConsentValidation &&
+                              (!_agreedToTerms || !_consentToMedia)
+                          ? Colors.red
+                          : const Color(0xFFD0D8E1),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      CheckboxListTile(
+                        contentPadding: EdgeInsets.zero,
+                        controlAffinity: ListTileControlAffinity.leading,
+                        value: _agreedToTerms,
+                        onChanged: (value) {
+                          setState(() {
+                            _agreedToTerms = value ?? false;
+                            if (_agreedToTerms && _consentToMedia) {
+                              _showConsentValidation = false;
+                            }
+                          });
+                        },
+                        title: const Text(
+                          'I agree to the event terms and conditions.',
+                          style: TextStyle(
+                            color: Color(0xFF001E40),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      CheckboxListTile(
+                        contentPadding: EdgeInsets.zero,
+                        controlAffinity: ListTileControlAffinity.leading,
+                        value: _consentToMedia,
+                        onChanged: (value) {
+                          setState(() {
+                            _consentToMedia = value ?? false;
+                            if (_agreedToTerms && _consentToMedia) {
+                              _showConsentValidation = false;
+                            }
+                          });
+                        },
+                        title: const Text(
+                          'I consent to photos/videos being taken during the event.',
+                          style: TextStyle(
+                            color: Color(0xFF001E40),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      if (_showConsentValidation &&
+                          (!_agreedToTerms || !_consentToMedia))
+                        const Padding(
+                          padding: EdgeInsets.only(top: 4),
+                          child: Text(
+                            'Both consent checkboxes are required.',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: 32),
                 SizedBox(
                   height: 50,
@@ -1656,9 +1903,9 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                             ),
                           )
                         : Text(
-                          isClosed
-                          ? 'REGISTRATION CLOSED'
-                          : 'SUBMIT REGISTRATION'
+                            isClosed
+                                ? 'REGISTRATION CLOSED'
+                                : 'SUBMIT REGISTRATION',
                           ),
                   ),
                 ),
@@ -1676,23 +1923,30 @@ class _RegistrationField extends StatelessWidget {
     required this.controller,
     required this.label,
     required this.hint,
+    this.keyboardType,
+    this.validator,
   });
 
   final TextEditingController controller;
   final String label;
   final String hint;
+  final TextInputType? keyboardType;
+  final FormFieldValidator<String>? validator;
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
+      keyboardType: keyboardType,
       decoration: _formDecoration(label).copyWith(hintText: hint),
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return '$label is required.';
-        }
-        return null;
-      },
+      validator:
+          validator ??
+          (value) {
+            if (value == null || value.trim().isEmpty) {
+              return '$label is required.';
+            }
+            return null;
+          },
     );
   }
 }
@@ -1708,7 +1962,8 @@ class EventParticipantsScreen extends StatefulWidget {
   final ParticipationService participationService;
 
   @override
-  State<EventParticipantsScreen> createState() => _EventParticipantsScreenState();
+  State<EventParticipantsScreen> createState() =>
+      _EventParticipantsScreenState();
 }
 
 class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
@@ -1719,24 +1974,30 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
     try {
       await widget.participationService.updateStatus(docId, status);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Participant marked as $status.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Participant marked as $status.')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to update status: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to update status: $e')));
     }
   }
 
-  Future<void> _deleteParticipant(BuildContext context, String docId, String name) async {
+  Future<void> _deleteParticipant(
+    BuildContext context,
+    String docId,
+    String name,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: const Text('Remove participant?'),
-          content: Text('Are you sure you want to remove "$name" from this event?'),
+          content: Text(
+            'Are you sure you want to remove "$name" from this event?',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -1756,9 +2017,9 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
     try {
       await widget.participationService.deleteParticipation(docId);
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Participant removed.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Participant removed.')));
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1799,23 +2060,34 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
 
   Future<void> _batchApprove(List<EventParticipation> participants) async {
     final selectedPending = participants.where(
-      (participant) => _selectedIds.contains(participant.id) && participant.status == 'pending',
+      (participant) =>
+          _selectedIds.contains(participant.id) &&
+          participant.status == 'pending',
     );
 
     if (selectedPending.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No pending requests selected to approve.')),
+        const SnackBar(
+          content: Text('No pending requests selected to approve.'),
+        ),
       );
       return;
     }
 
     try {
       await Future.wait(
-        selectedPending.map((participant) => widget.participationService.updateStatus(participant.id, 'confirmed')),
+        selectedPending.map(
+          (participant) => widget.participationService.updateStatus(
+            participant.id,
+            'confirmed',
+          ),
+        ),
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${selectedPending.length} request(s) approved.')),
+        SnackBar(
+          content: Text('${selectedPending.length} request(s) approved.'),
+        ),
       );
       setState(() {
         _selectedIds.clear();
@@ -1830,7 +2102,9 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
   }
 
   Future<void> _batchDelete(List<EventParticipation> participants) async {
-    final selectedParticipants = participants.where((participant) => _selectedIds.contains(participant.id)).toList();
+    final selectedParticipants = participants
+        .where((participant) => _selectedIds.contains(participant.id))
+        .toList();
     if (selectedParticipants.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No participants selected to remove.')),
@@ -1843,7 +2117,9 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
       builder: (context) {
         return AlertDialog(
           title: const Text('Remove selected participants?'),
-          content: Text('Are you sure you want to remove ${selectedParticipants.length} selected participant(s)?'),
+          content: Text(
+            'Are you sure you want to remove ${selectedParticipants.length} selected participant(s)?',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -1862,11 +2138,18 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
 
     try {
       await Future.wait(
-        selectedParticipants.map((participant) => widget.participationService.deleteParticipation(participant.id)),
+        selectedParticipants.map(
+          (participant) =>
+              widget.participationService.deleteParticipation(participant.id),
+        ),
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${selectedParticipants.length} participant(s) removed.')),
+        SnackBar(
+          content: Text(
+            '${selectedParticipants.length} participant(s) removed.',
+          ),
+        ),
       );
       setState(() {
         _selectedIds.clear();
@@ -1897,8 +2180,14 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
               padding: const EdgeInsets.only(right: 8),
               child: TextButton.icon(
                 onPressed: _toggleSelectionMode,
-                icon: const Icon(Icons.check_box_outline_blank, color: Color(0xFF003366)),
-                label: const Text('Select', style: TextStyle(color: Color(0xFF003366))),
+                icon: const Icon(
+                  Icons.check_box_outline_blank,
+                  color: Color(0xFF003366),
+                ),
+                label: const Text(
+                  'Select',
+                  style: TextStyle(color: Color(0xFF003366)),
+                ),
               ),
             )
           else
@@ -1929,19 +2218,22 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
                   const SizedBox(height: 4),
                   const Text(
                     'Manage registered participants for this event.',
-                    style: TextStyle(
-                      color: Color(0xFF4A5D72),
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Color(0xFF4A5D72), fontSize: 14),
                   ),
                 ],
               ),
             ),
             if (_selectionMode)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 8,
+                ),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
@@ -1958,7 +2250,9 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
               ),
             Expanded(
               child: StreamBuilder<List<EventParticipation>>(
-                stream: widget.participationService.watchEventParticipations(widget.event.id),
+                stream: widget.participationService.watchEventParticipations(
+                  widget.event.id,
+                ),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
                     return _StateMessage(
@@ -1976,7 +2270,8 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
                     return const _StateMessage(
                       icon: Icons.people_outline,
                       title: 'No participants yet',
-                      subtitle: 'When students register, they will appear here.',
+                      subtitle:
+                          'When students register, they will appear here.',
                     );
                   }
 
@@ -1984,30 +2279,49 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
                     children: [
                       if (_selectionMode)
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 8,
+                          ),
                           child: Row(
                             children: [
                               TextButton.icon(
                                 onPressed: () => _toggleSelectAll(list),
                                 icon: Icon(
-                                  _selectedIds.length == list.length ? Icons.check_box : Icons.check_box_outline_blank,
+                                  _selectedIds.length == list.length
+                                      ? Icons.check_box
+                                      : Icons.check_box_outline_blank,
                                   color: const Color(0xFF003366),
                                 ),
                                 label: Text(
-                                  _selectedIds.length == list.length ? 'Deselect All' : 'Select All',
-                                  style: const TextStyle(color: Color(0xFF003366)),
+                                  _selectedIds.length == list.length
+                                      ? 'Deselect All'
+                                      : 'Select All',
+                                  style: const TextStyle(
+                                    color: Color(0xFF003366),
+                                  ),
                                 ),
                               ),
                               const Spacer(),
                               IconButton(
                                 tooltip: 'Approve selected',
-                                icon: const Icon(Icons.check_circle_outline, color: Colors.green),
-                                onPressed: _selectedIds.isNotEmpty ? () => _batchApprove(list) : null,
+                                icon: const Icon(
+                                  Icons.check_circle_outline,
+                                  color: Colors.green,
+                                ),
+                                onPressed: _selectedIds.isNotEmpty
+                                    ? () => _batchApprove(list)
+                                    : null,
                               ),
                               IconButton(
                                 tooltip: 'Delete selected',
-                                icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                onPressed: _selectedIds.isNotEmpty ? () => _batchDelete(list) : null,
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.red,
+                                ),
+                                onPressed: _selectedIds.isNotEmpty
+                                    ? () => _batchDelete(list)
+                                    : null,
                               ),
                             ],
                           ),
@@ -2016,19 +2330,24 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
                         child: ListView.separated(
                           padding: const EdgeInsets.all(20),
                           itemCount: list.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 12),
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final p = list[index];
                             final isSelected = _selectedIds.contains(p.id);
                             return InkWell(
-                              onTap: _selectionMode ? () => _toggleParticipantSelection(p.id) : null,
+                              onTap: _selectionMode
+                                  ? () => _toggleParticipantSelection(p.id)
+                                  : null,
                               borderRadius: BorderRadius.circular(16),
                               child: Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: const Color(0xFFECEEF0)),
+                                  border: Border.all(
+                                    color: const Color(0xFFECEEF0),
+                                  ),
                                   boxShadow: const [
                                     BoxShadow(
                                       color: Color.fromRGBO(0, 30, 64, 0.03),
@@ -2042,13 +2361,15 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
                                     if (_selectionMode) ...[
                                       Checkbox(
                                         value: isSelected,
-                                        onChanged: (_) => _toggleParticipantSelection(p.id),
+                                        onChanged: (_) =>
+                                            _toggleParticipantSelection(p.id),
                                       ),
                                       const SizedBox(width: 8),
                                     ],
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             p.fullName,
@@ -2073,11 +2394,43 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
                                               fontSize: 12,
                                             ),
                                           ),
+                                          Text(
+                                            '${p.courseProgram} • ${p.semester}',
+                                            style: const TextStyle(
+                                              color: Color(0xFF4A5D72),
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                          Text(
+                                            'Phone: ${p.phoneNumber}',
+                                            style: const TextStyle(
+                                              color: Color(0xFF4A5D72),
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                          Text(
+                                            'Emergency: ${p.emergencyContact}',
+                                            style: const TextStyle(
+                                              color: Color(0xFF4A5D72),
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                          Text(
+                                            'Dietary: ${p.dietaryRestrictions}',
+                                            style: const TextStyle(
+                                              color: Color(0xFF4A5D72),
+                                              fontSize: 12,
+                                            ),
+                                          ),
                                           const SizedBox(height: 8),
                                           _Pill(
                                             text: p.status.toUpperCase(),
-                                            background: _getStatusBgColor(p.status),
-                                            color: _getStatusTextColor(p.status),
+                                            background: _getStatusBgColor(
+                                              p.status,
+                                            ),
+                                            color: _getStatusTextColor(
+                                              p.status,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -2087,13 +2440,26 @@ class _EventParticipantsScreenState extends State<EventParticipantsScreen> {
                                         if (p.status == 'pending')
                                           IconButton(
                                             tooltip: 'Approve',
-                                            icon: const Icon(Icons.check_circle_outline, color: Colors.green),
-                                            onPressed: () => _updateStatus(p.id, 'confirmed'),
+                                            icon: const Icon(
+                                              Icons.check_circle_outline,
+                                              color: Colors.green,
+                                            ),
+                                            onPressed: () => _updateStatus(
+                                              p.id,
+                                              'confirmed',
+                                            ),
                                           ),
                                         IconButton(
                                           tooltip: 'Delete / Remove',
-                                          icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                          onPressed: () => _deleteParticipant(context, p.id, p.fullName),
+                                          icon: const Icon(
+                                            Icons.delete_outline,
+                                            color: Colors.red,
+                                          ),
+                                          onPressed: () => _deleteParticipant(
+                                            context,
+                                            p.id,
+                                            p.fullName,
+                                          ),
                                         ),
                                       ],
                                     ),

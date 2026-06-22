@@ -55,6 +55,11 @@ class ParticipationService {
     required String faculty,
     required String matricNumber,
     required String college,
+    required String courseProgram,
+    required String semester,
+    required String phoneNumber,
+    required String emergencyContact,
+    required String dietaryRestrictions,
   }) async {
     final docId = '${userId}_$eventId';
     await _participations.doc(docId).set(<String, Object?>{
@@ -64,6 +69,11 @@ class ParticipationService {
       'faculty': faculty.trim(),
       'matricNumber': matricNumber.trim(),
       'college': college.trim(),
+      'courseProgram': courseProgram.trim(),
+      'semester': semester.trim(),
+      'phoneNumber': phoneNumber.trim(),
+      'emergencyContact': emergencyContact.trim(),
+      'dietaryRestrictions': dietaryRestrictions.trim(),
       'status': 'pending',
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
