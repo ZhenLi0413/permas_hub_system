@@ -9,6 +9,11 @@ class EventParticipation {
     required this.faculty,
     required this.matricNumber,
     required this.college,
+    required this.courseProgram,
+    required this.semester,
+    required this.phoneNumber,
+    required this.emergencyContact,
+    required this.dietaryRestrictions,
     required this.status, // 'pending', 'confirmed', 'attended'
     this.createdAt,
     this.updatedAt,
@@ -21,6 +26,11 @@ class EventParticipation {
   final String faculty;
   final String matricNumber;
   final String college;
+  final String courseProgram;
+  final String semester;
+  final String phoneNumber;
+  final String emergencyContact;
+  final String dietaryRestrictions;
   final String status;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -37,6 +47,11 @@ class EventParticipation {
       faculty: data['faculty'] as String? ?? '',
       matricNumber: data['matricNumber'] as String? ?? '',
       college: data['college'] as String? ?? '',
+      courseProgram: data['courseProgram'] as String? ?? '',
+      semester: data['semester'] as String? ?? '',
+      phoneNumber: data['phoneNumber'] as String? ?? '',
+      emergencyContact: data['emergencyContact'] as String? ?? '',
+      dietaryRestrictions: data['dietaryRestrictions'] as String? ?? '',
       status: data['status'] as String? ?? 'pending',
       createdAt: _readDate(data['createdAt']),
       updatedAt: _readDate(data['updatedAt']),
@@ -51,6 +66,11 @@ class EventParticipation {
       'faculty': faculty,
       'matricNumber': matricNumber,
       'college': college,
+      'courseProgram': courseProgram,
+      'semester': semester,
+      'phoneNumber': phoneNumber,
+      'emergencyContact': emergencyContact,
+      'dietaryRestrictions': dietaryRestrictions,
       'status': status,
       'updatedAt': FieldValue.serverTimestamp(),
     };
